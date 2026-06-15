@@ -79,6 +79,7 @@ dependencies {
 // Tasks:
 tasks.withType(JavaCompile::class) {
     options.encoding = "UTF-8"
+    options.compilerArgs.addAll(listOf("-Xmaxerrs", "9999"))
 }
 tasks.withType(org.gradle.jvm.tasks.Jar::class) {
     archiveBaseName.set(jarName)
