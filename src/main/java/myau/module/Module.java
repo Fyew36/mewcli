@@ -93,4 +93,8 @@ public abstract class Module {
 
     public void verifyValue(String string) {
     }
+
+    public String getCategory() {
+        return "Misc";
+    }
 }

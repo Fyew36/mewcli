@@ -1,140 +1,175 @@
+
 package myau.ui.components;
 
-import myau.Myau;
-import myau.module.modules.GuiModule;
-import myau.module.modules.HUD;
-import myau.ui.ClickGui;
-import myau.ui.Component;
-import myau.ui.dataset.BindStage;
-import myau.util.KeyBindUtil;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
+import myau.ui.components.Component;
+import myau.module.Module;
+import myau.util.render.RenderUtils;
+import myau.util.render.Theme;
+import myau.util.font.Font;
+import myau.util.font.Fonts;
+import net.minecraft.util.ResourceLocation;
 import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
-import java.awt.*;
-import java.util.concurrent.atomic.AtomicInteger;
+public class BindComponent extends Component {
+    private static final String EYE_ICON_PATH = "/assets/keystrokesmod/textures/gui/eye.png";
+    private static final String EYE_OFF_ICON_PATH = "/assets/keystrokesmod/textures/gui/eye_off.png";
+    private static final int EYE_ICON_PADDING = 2;
 
-public class BindComponent implements Component {
-    private boolean isBinding;
-    private final ModuleComponent parentModule;
-    private int offsetY;
-    private int x;
-    private int y;
+    public boolean isBinding;
+    public ModuleComponent moduleComponent;
+    public float o;
+    public float x;
+    private float y;
+    public float xOffset;
 
-    public BindComponent(ModuleComponent b, int offsetY) {
-        this.parentModule = b;
-        this.x = b.category.getX() + b.category.getWidth();
-        this.y = b.category.getY() + b.offsetY;
-        this.offsetY = offsetY;
+    public BindComponent(ModuleComponent moduleComponent, float o) {
+        this.moduleComponent = moduleComponent;
+        this.x = moduleComponent.categoryComponent.getX() + moduleComponent.categoryComponent.getWidth();
+        this.y = moduleComponent.categoryComponent.getY() + moduleComponent.yPos;
+        this.o = o;
     }
 
-    public void draw(AtomicInteger offset) {
-        if (ClickGui.isModern()) {
-            int color = this.isBinding
-                    ? new Color(100, 200, 255).getRGB()
-                    : ((HUD) Myau.moduleManager.modules.get(HUD.class)).getColor(System.currentTimeMillis(), offset.get()).getRGB();
+    public void updateHeight(float n) {
+        this.o = n;
+    }
 
-            String displayText = this.isBinding ? BindStage.binding : BindStage.bind + ": " + KeyBindUtil.getKeyName(this.parentModule.mod.getKey());
+    @Override public float getOffset() { return o; }
+    @Override public boolean isBaseVisible() { return true; }
 
-            Gui.drawRect(
-                    this.parentModule.category.getX() + 4,
-                    this.parentModule.category.getY() + this.offsetY + 1,
-                    this.parentModule.category.getX() + this.parentModule.category.getWidth() - 4,
-                    this.parentModule.category.getY() + this.offsetY + 11,
-                    new Color(30, 30, 40, 100).getRGB()
-            );
+    public void render() {
+        Font renderer = Fonts.MINECRAFT.get(18);
+        GL11.glPushMatrix();
+        GL11.glScaled(0.5D, 0.5D, 0.5D);
+        this.drawString(renderer, this.isBinding ? "Press a key..." : "Current bind: '\u00a7e" + getKeyAsStr() + "\u00a7r'");
+        GL11.glPopMatrix();
 
-            GL11.glPushMatrix();
-            GL11.glScaled(0.5D, 0.5D, 0.5D);
-            Minecraft.getMinecraft().fontRendererObj.drawStringWithShadow(
-                    displayText,
-                    (float) ((this.parentModule.category.getX() + 6) * 2),
-                    (float) ((this.parentModule.category.getY() + this.offsetY + 2) * 2),
-                    color
-            );
-            GL11.glPopMatrix();
+        int iconSize = getEyeIconSize();
+        float iconX = getEyeIconX(iconSize);
+        float textHeight = renderer.getFontHeight() * 0.5f;
+        float iconY = getRenderTextY() + (textHeight - iconSize) / 2f;
+
+        int themeColor = !moduleComponent.mod.isHidden()
+                ? Theme.getGradient(Theme.descriptor[0], Theme.descriptor[1], 0)
+                : Theme.getGradient(Theme.hiddenBind[0], Theme.hiddenBind[1], 0);
+        String iconPath = moduleComponent.mod.isHidden() ? EYE_OFF_ICON_PATH : EYE_ICON_PATH;
+        RenderUtils.drawIcon(RenderUtils.getIcon(iconPath), iconX, iconY, iconSize, themeColor);
+    }
+
+    public void drawScreen(int x, int y) {
+        this.y = moduleComponent.categoryComponent.getModuleY() + o;
+        this.x = moduleComponent.categoryComponent.getX();
+    }
+
+    public boolean onClick(int x, int y, int button) {
+        if (!overSetting(x, y) || !moduleComponent.isOpened || !moduleComponent.isVisible(this)) return false;
+        if (button == 0 && overEyeIcon(x, y)) {
+            moduleComponent.mod.setHidden(!moduleComponent.mod.isHidden());
+            return true;
+        }
+        if (button == 0 && overBindText(x, y)) {
+            isBinding = !isBinding;
+            return true;
+        }
+        if (button > 1 && isBinding) {
+            moduleComponent.mod.setKey(button + 1000);
+            isBinding = false;
+            return true;
+        }
+        return false;
+    }
+
+    private boolean overEyeIcon(int x, int y) {
+        int iconSize = getEyeIconSize();
+        float iconX = getEyeIconX(iconSize);
+        float iconY = getEyeIconY(iconSize);
+        return x >= iconX && x < iconX + iconSize && y >= iconY && y < iconY + iconSize;
+    }
+
+    private float getBindTextX() {
+        return moduleComponent.categoryComponent.getX() + 4f + (xOffset * 0.5f);
+    }
+
+    private float getBindTextY() {
+        return moduleComponent.categoryComponent.getModuleY() + o + 3f;
+    }
+
+    private float getRenderTextY() {
+        return moduleComponent.categoryComponent.getY() + o + 3f;
+    }
+
+    private String getBindDisplayString() {
+        return isBinding ? "Press a key..." : "Current bind: '\u00a7e" + getKeyAsStr() + "\u00a7r'";
+    }
+
+    private boolean overBindText(int mouseX, int mouseY) {
+        String text = getBindDisplayString();
+        Font renderer = Fonts.MINECRAFT.get(18);
+
+        float left = getBindTextX();
+        float top = getBindTextY();
+        float width = renderer.getStringWidth(text) * 0.5f;
+        float height = renderer.getFontHeight() * 0.5f;
+
+        return mouseX >= left && mouseX < left + width
+                && mouseY >= top && mouseY < top + height;
+    }
+
+    private int getEyeIconSize() {
+        int fontH = Math.round(Fonts.MINECRAFT.get(18).getFontHeight() * 0.5f);
+        return Math.max(6, fontH - 1);
+    }
+
+    private float getEyeIconX(int iconSize) {
+        return moduleComponent.categoryComponent.getX() + moduleComponent.categoryComponent.getWidth() - iconSize - EYE_ICON_PADDING;
+    }
+
+    private float getEyeIconY(int iconSize) {
+        float textY = getBindTextY();
+        float textHeight = Fonts.MINECRAFT.get(18).getFontHeight() * 0.5f;
+        return textY + (textHeight - iconSize) / 2f;
+    }
+
+    public void onScroll(int scroll) {
+        if (!isBinding || scroll == 0) return;
+        moduleComponent.mod.setKey(scroll > 0 ? 1069 : 1070);
+        isBinding = false;
+    }
+
+    public void keyTyped(char t, int keybind) {
+        if (!isBinding) return;
+        if (keybind == Keyboard.KEY_0 || keybind == Keyboard.KEY_ESCAPE) {
+            moduleComponent.mod.setKey(0);
         } else {
-            GL11.glPushMatrix();
-            GL11.glScaled(0.5D, 0.5D, 0.5D);
-            String displayText = this.isBinding ? BindStage.binding : BindStage.bind + ": " + KeyBindUtil.getKeyName(this.parentModule.mod.getKey());
-            int color = ((HUD) Myau.moduleManager.modules.get(HUD.class)).getColor(System.currentTimeMillis(), offset.get()).getRGB();
-            Minecraft.getMinecraft().fontRendererObj.drawStringWithShadow(
-                    displayText,
-                    (float) ((this.parentModule.category.getX() + 4) * 2),
-                    (float) ((this.parentModule.category.getY() + this.offsetY + 3) * 2),
-                    color
-            );
-            GL11.glPopMatrix();
+            moduleComponent.mod.setKey(keybind);
         }
+        isBinding = false;
     }
 
-    @Override
-    public void update(int mousePosX, int mousePosY) {
-        boolean h = this.isHovered(mousePosX, mousePosY);
-        this.y = this.parentModule.category.getY() + this.offsetY;
-        this.x = this.parentModule.category.getX();
+    public boolean overSetting(int mouseX, int mouseY) {
+        float rowX = moduleComponent.categoryComponent.getX();
+        float rowY = moduleComponent.categoryComponent.getModuleY() + o;
+        float rowW = moduleComponent.categoryComponent.getWidth();
+        return mouseX > rowX && mouseX < rowX + rowW && mouseY > rowY - 1 && mouseY < rowY + 12;
     }
 
-    public void mouseDown(int x, int y, int button) {
-        if (this.isHovered(x, y) && button == 0 && this.parentModule.panelExpand) {
-            this.isBinding = !this.isBinding;
-        } else if (this.isBinding && this.parentModule.panelExpand) {
-            int keyIndex = button - 100;
-
-            if (button == 0) {
-                this.isBinding = false;
-                return;
-            }
-
-            this.parentModule.mod.setKey(keyIndex);
-            this.isBinding = false;
-        }
+    public String getKeyAsStr() {
+        int key = moduleComponent.mod.getKey();
+        return key >= 1000 ? ((key == 1069 || key == 1070) ? getScroll(key) : "M" + (key - 1000)) : Keyboard.getKeyName(key);
     }
 
-    @Override
-    public void mouseReleased(int x, int y, int button) {
-
+    public String getScroll(int key) {
+        if (key == 1069) return "MScrollUp";
+        if (key == 1070) return "MScrollDown";
+        return "&cERROR";
     }
 
-    @Override
-    public void keyTyped(char chatTyped, int keyCode) {
-        if (this.isBinding) {
-            if (keyCode == 1) {
-                this.isBinding = false;
-                return;
-            }
+    @Override public float getHeightF() { return 16f; }
+    @Override public int getHeight() { return Math.round(getHeightF()); }
 
-            if (keyCode == 11) {
-                if (this.parentModule.mod instanceof GuiModule) {
-                    this.parentModule.mod.setKey(54);
-                } else {
-                    this.parentModule.mod.setKey(0);
-                }
-            } else {
-                this.parentModule.mod.setKey(keyCode);
-            }
-
-            this.isBinding = false;
-        }
+    private void drawString(Font renderer, String s) {
+        renderer.draw(s, (float) ((this.moduleComponent.categoryComponent.getX() + 4) * 2) + xOffset, (float) ((this.moduleComponent.categoryComponent.getY() + this.o + 3) * 2), Theme.getGradient(Theme.descriptor[0], Theme.descriptor[1], 0), true);
     }
 
-    @Override
-    public void setComponentStartAt(int newOffsetY) {
-        this.offsetY = newOffsetY;
-    }
-
-    public boolean isHovered(int x, int y) {
-        return x > this.x && x < this.x + this.parentModule.category.getWidth() && y > this.y - 1 && y < this.y + 12;
-    }
-
-    public int getHeight() {
-        return 12;
-    }
-
-    @Override
-    public boolean isVisible() {
-        return true;
-    }
+    public void onGuiClosed() { isBinding = false; }
 }

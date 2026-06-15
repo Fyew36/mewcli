@@ -10,9 +10,12 @@ import myau.module.modules.HUD;
 import myau.util.ChatUtil;
 import myau.util.SoundUtil;
 
-import java.util.LinkedHashMap;
+import java.util.*;
+import java.util.stream.*;
 
 public class ModuleManager {
+
+    private static final List<String> CATEGORIES = List.of("Combat", "Movement", "Render", "Player", "Misc", "Latency", "Minigames", "Target");
     private boolean sound = false;
     public final LinkedHashMap<Class<?>, Module> modules = new LinkedHashMap<>();
 
@@ -22,6 +25,20 @@ public class ModuleManager {
 
     public Module getModule(Class<?> clazz){
         return this.modules.get(clazz);
+    }
+
+    public LinkedHashMap<String, List<Module>> getModulesByCategory() {
+        LinkedHashMap<String, List<Module>> categories = new LinkedHashMap<>();
+        for (String name : CATEGORIES) {
+            categories.put(name, new ArrayList<>());
+        }
+        for (Module module : modules.values()) {
+            String cat = module.getCategory();
+            List<Module> list = categories.get(cat);
+            if (list == null) list = categories.get("Misc");
+            if (list != null) list.add(module);
+        }
+        return categories;
     }
 
     public void playSound() {

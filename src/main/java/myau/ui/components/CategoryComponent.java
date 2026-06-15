@@ -1,264 +1,566 @@
 package myau.ui.components;
 
-import myau.Myau;
-import myau.module.Module;
-import myau.module.modules.HUD;
+import myau.ui.animation.ScrollOffsetAnimation;
 import myau.ui.ClickGui;
-import myau.ui.Component;
+import myau.ui.components.Component;
+import myau.module.Module;
+import myau.util.render.RenderUtils;
+import myau.util.ColorUtil;
+import myau.util.Timer;
+import myau.util.font.Font;
+import myau.util.font.Fonts;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.entity.RenderItem;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.init.Items;
+import net.minecraft.item.ItemStack;
 import org.lwjgl.opengl.GL11;
 
-import java.awt.*;
-import java.util.ArrayList;
+import java.awt.Color;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class CategoryComponent {
-    private final int MAX_HEIGHT = 300;
+    private static long interactionSequence;
+    private static final Map<String, CategoryIconStacks> CATEGORY_ICON_STACKS = buildCategoryIconStacks();
 
-    public ArrayList<Component> modulesInCategory = new ArrayList<>();
-    public String categoryName;
-    private boolean categoryOpened;
-    private int width;
-    private int y;
-    private int x;
-    private final int bh;
+    public List<Component> modules = new CopyOnWriteArrayList<>();
+    public String category;
+    public boolean opened;
+    public float width;
+    public float y;
+    public float x;
+    public float titleHeight;
     public boolean dragging;
-    public int xx;
-    public int yy;
-    public boolean pin = false;
-    private double marginY, marginX;
-    private int scroll = 0;
-    private double animScroll = 0;
-    private int height = 0;
-    private double animOpen = 0.0;
-    private float hoverFade = 0.0F;
+    public float xx;
+    public float yy;
+    public boolean hovering = false;
+    public boolean hoveringOverCategory = false;
+    public Timer smoothTimer;
+    private Timer textTimer;
+    public float big;
 
-    public CategoryComponent(String category, List<Module> modules) {
-        this.categoryName = category;
-        this.width = 92;
-        this.x = 5;
-        this.y = 5;
-        this.bh = 13;
-        this.xx = 0;
-        this.categoryOpened = false;
-        this.dragging = false;
-        int tY = this.bh + 3;
-        this.marginX = 80;
-        this.marginY = 4.5;
-        for (Module mod : modules) {
-            ModuleComponent b = new ModuleComponent(mod, this, tY);
-            this.modulesInCategory.add(b);
-            tY += 16;
+    private static final int TRANSLUCENT_BACKGROUND = new Color(0, 0, 0, 110).getRGB();
+    private static final int REGULAR_OUTLINE = new Color(81, 99, 149).getRGB();
+    private static final int REGULAR_OUTLINE2 = new Color(97, 67, 133).getRGB();
+    private static final int CATEGORY_NAME_COLOR = new Color(220, 220, 220).getRGB();
+
+    private float lastHeight;
+    private float lastNamePos;
+    private float animationStartNamePos;
+    public float moduleY;
+    private float screenHeight;
+    private float screenWidth;
+    private float animationStartHeight;
+
+    private final ScrollOffsetAnimation scrollAnim = new ScrollOffsetAnimation(200);
+    public long lastInteractedTime = 0L;
+
+    private static final class CategoryLayoutMetrics {
+        private final float visibleHeight;
+        private final float minScrollY;
+        private final float contentBottom;
+
+        private CategoryLayoutMetrics(float visibleHeight, float minScrollY, float contentBottom) {
+            this.visibleHeight = visibleHeight;
+            this.minScrollY = minScrollY;
+            this.contentBottom = contentBottom;
         }
     }
 
-    public ArrayList<Component> getModules() {
-        return this.modulesInCategory;
+    private static final class CategoryIconStacks {
+        private final ItemStack normalStack;
+        private final ItemStack activeStack;
+
+        private CategoryIconStacks(ItemStack normalStack, ItemStack activeStack) {
+            this.normalStack = normalStack;
+            this.activeStack = activeStack;
+        }
     }
 
-    public void setX(int n) {
-        this.x = n;
+    public CategoryComponent(String category) {
+        this.category = category;
+        this.width = 92;
+        this.x = 5;
+        this.moduleY = this.y = 5;
+        this.titleHeight = 13;
+        float moduleRenderY = this.titleHeight + 3;
+        scrollAnim.reset(this.moduleY);
+
+        this.lastHeight = this.y + this.titleHeight + 4;
+        this.animationStartHeight = this.lastHeight;
+
+        List<Module> mods = myau.Myau.moduleManager.getModulesByCategory().get(category);
+        if (mods != null) {
+            for (Module mod : mods) {
+                ModuleComponent b = new ModuleComponent(mod, this, moduleRenderY);
+                this.modules.add(b);
+                moduleRenderY += 16;
+            }
+        }
     }
 
-    public void setY(int y) {
+    public List<Component> getModules() {
+        return this.modules;
+    }
+
+    public void reloadModules() {
+        if (this.category.equalsIgnoreCase("OnlineConfig")) {
+            syncAfterModuleReload();
+            return;
+        }
+        Map<String, Boolean> openStates = captureModuleOpenStates();
+        this.modules.clear();
+        this.titleHeight = 13;
+        float moduleRenderY = this.titleHeight + 3;
+
+        List<Module> mods = myau.Myau.moduleManager.getModulesByCategory().get(this.category);
+        if (mods != null) {
+            for (Module mod : mods) {
+                ModuleComponent component = new ModuleComponent(mod, this, moduleRenderY);
+                component.restoreOpenState(Boolean.TRUE.equals(openStates.get(mod.getName())));
+                this.modules.add(component);
+                moduleRenderY += 16;
+            }
+        }
+
+        syncAfterModuleReload();
+    }
+
+    private Map<String, Boolean> captureModuleOpenStates() {
+        Map<String, Boolean> openStates = new HashMap<>();
+        for (Component moduleComponent : this.modules) {
+            if (moduleComponent instanceof ModuleComponent && ((ModuleComponent) moduleComponent).mod != null) {
+                openStates.put(((ModuleComponent) moduleComponent).mod.getName(), ((ModuleComponent) moduleComponent).isOpened);
+            }
+        }
+        return openStates;
+    }
+
+    private void syncAfterModuleReload() {
+        CategoryLayoutMetrics layoutMetrics = computeLayoutMetrics(this.opened || this.smoothTimer != null);
+        float minScrollY = layoutMetrics.minScrollY;
+        float maxScrollY = this.y;
+        float clampedScroll = Math.max(minScrollY, Math.min(maxScrollY, scrollAnim.getTarget()));
+        this.moduleY = clampedScroll;
+        scrollAnim.reset(clampedScroll);
+
+        if (this.opened && !this.modules.isEmpty()) {
+            this.big = layoutMetrics.visibleHeight;
+            this.lastHeight = layoutMetrics.contentBottom;
+            return;
+        }
+
+        if (!this.opened && this.smoothTimer == null) {
+            this.big = 0f;
+        }
+        this.lastHeight = this.y + this.titleHeight + 4;
+    }
+
+    public void setX(float newX, boolean limit) {
+        if (limit) {
+            newX = Math.max(newX, 2);
+            newX = Math.min(newX, screenWidth - this.width - 4);
+        }
+        this.x = newX;
+    }
+
+    public void setY(float y, boolean limit) {
+        if (limit) {
+            y = Math.max(y, 1);
+            float maxY = screenHeight - this.titleHeight - 5;
+            y = Math.min(y, maxY);
+        }
+
+        float scrollOffset = scrollAnim.getTarget() - this.y;
         this.y = y;
+        float newTarget = y + scrollOffset;
+        this.moduleY = newTarget;
+        scrollAnim.reset(newTarget);
     }
 
-    public void mousePressed(boolean d) {
+    public void overTitle(boolean d) {
         this.dragging = d;
     }
 
-    public boolean isPin() {
-        return this.pin;
-    }
-
-    public void setPin(boolean on) {
-        this.pin = on;
-    }
-
     public boolean isOpened() {
-        return this.categoryOpened;
+        return this.opened;
     }
 
-    public void setOpened(boolean on) {
-        this.categoryOpened = on;
+    public void markInteracted() {
+        this.lastInteractedTime = ++interactionSequence;
     }
 
-    private void drawRoundedRect(int x, int y, int w, int h, int color) {
-        Gui.drawRect(x + 2, y, x + w - 2, y + h, color);
-        Gui.drawRect(x, y + 2, x + w, y + h - 2, color);
-        Gui.drawRect(x + 1, y + 1, x + w - 1, y + h - 1, color);
+    public void mouseClicked(boolean on) {
+        this.animationStartHeight = getCurrentAnimatedCategoryHeight();
+        this.animationStartNamePos = getCurrentAnimatedNamePos();
+
+        float animationDuration = 250.0f;
+
+        this.opened = on;
+        (this.smoothTimer = new Timer(animationDuration)).start();
+        (this.textTimer = new Timer(animationDuration)).start();
     }
 
-    private void drawGradientRect(int x, int y, int w, int h, int color1, int color2) {
-        Gui.drawRect(x, y, x + w, y + h, color1);
-        Gui.drawRect(x, y + h / 2, x + w, y + h, color2);
+    public void onScroll(int mouseScrollInput) {
+        onScroll(mouseScrollInput, Float.NaN, Float.NaN);
+    }
+
+    public void onScroll(int mouseScrollInput, float mouseX, float mouseY) {
+        for (Component mod : this.modules) {
+            mod.onScroll(mouseScrollInput);
+        }
+        if (!hoveringOverCategory || !this.opened) {
+            return;
+        }
+        this.markInteracted();
+        float scrollSpeed = 10f;
+        float minScrollY = computeMinScrollY();
+        float maxScrollY = this.y;
+        float delta = scrollSpeed * (mouseScrollInput / 120f);
+        if (delta != 0f) {
+            scrollAnim.extend(delta);
+        }
+        scrollAnim.clampTarget(minScrollY, maxScrollY);
+    }
+
+    private float computeMinScrollY() {
+        return computeLayoutMetrics(false).minScrollY;
     }
 
     public void render(FontRenderer renderer) {
         this.width = 92;
-        update();
-        height = 0;
-        for (Component moduleRenderManager : this.modulesInCategory) {
-            height += moduleRenderManager.getHeight();
+        Font titleRenderer = Fonts.MINECRAFT.get(24);
+
+        if (smoothTimer != null && System.currentTimeMillis() - smoothTimer.last >= 280) {
+            smoothTimer = null;
         }
-        int maxScroll = Math.max(0, height - MAX_HEIGHT);
-        if (scroll > maxScroll) scroll = maxScroll;
-        if (animScroll > maxScroll) animScroll = maxScroll;
-        animScroll += (scroll - animScroll) * 0.2;
+        if (textTimer != null && System.currentTimeMillis() - textTimer.last >= 280) {
+            textTimer = null;
+        }
 
-        if (ClickGui.isModern()) {
-            boolean hovered = insideAreaHover();
-            hoverFade += (hovered ? 0.08F : -0.08F);
-            hoverFade = Math.max(0.0F, Math.min(1.0F, hoverFade));
-
-            animOpen += (categoryOpened ? 0.15 : -0.15);
-            animOpen = Math.max(0.0, Math.min(1.0, animOpen));
-            int displayHeight = (int) (Math.min(height, MAX_HEIGHT) * animOpen);
-
-            int headerColor = new Color(15, 15, 20, 230).getRGB();
-            int bodyColor = new Color(10, 10, 15, 180).getRGB();
-
-            if (displayHeight > 0) {
-                drawRoundedRect(this.x, this.y + this.bh + 3, this.width, displayHeight, bodyColor);
+        for (Component c : this.modules) {
+            if (c instanceof ModuleComponent) {
+                ((ModuleComponent) c).updateAnimationState();
             }
+        }
 
-            drawRoundedRect(this.x, this.y, this.width, this.bh + 3, headerColor);
+        CategoryLayoutMetrics layoutMetrics = computeLayoutMetrics(this.opened || smoothTimer != null);
+        big = (!this.opened && smoothTimer == null) ? 0f : layoutMetrics.visibleHeight;
+        float maxScrollY = this.y;
+        float minScrollY = layoutMetrics.minScrollY;
 
-            if (hoverFade > 0.01F) {
-                int glowAlpha = (int) (40 * hoverFade);
-                int glowColor = ((HUD) Myau.moduleManager.modules.get(HUD.class)).getColor(System.currentTimeMillis(), 0).getRGB();
-                Gui.drawRect(this.x, this.y, this.x + this.width, this.y + this.bh + 3, glowAlpha << 24 | (glowColor & 0x00FFFFFF));
-            }
+        scrollAnim.clampTarget(minScrollY, maxScrollY);
 
-            renderer.drawString(this.categoryName, (float) (this.x + 4), (float) (this.y + 4), -1, false);
-            String toggleIcon = categoryOpened ? "-" : "+";
-            renderer.drawString(toggleIcon, (float) (this.x + marginX), (float) ((double) this.y + marginY), new Color(180, 180, 180).getRGB(), false);
+        moduleY = scrollAnim.getValue();
+        moduleY = Math.max(minScrollY, Math.min(maxScrollY, moduleY));
 
-            if (displayHeight > 0 && !this.modulesInCategory.isEmpty()) {
-                int renderHeight = 0;
-                ScaledResolution sr = new ScaledResolution(Minecraft.getMinecraft());
-                double scale = sr.getScaleFactor();
-                int bottom = this.y + this.bh + MAX_HEIGHT + 3;
-                GL11.glEnable(GL11.GL_SCISSOR_TEST);
-                GL11.glScissor((int) (this.x * scale), (int) ((sr.getScaledHeight() - bottom) * scale), (int) (this.width * scale), (int) (MAX_HEIGHT * scale));
-                for (Component c2 : this.modulesInCategory) {
-                    int compHeight = c2.getHeight();
-                    if (renderHeight + compHeight > animScroll &&
-                            renderHeight < animScroll + MAX_HEIGHT) {
-                        int drawY = (int) (renderHeight - animScroll);
-                        c2.setComponentStartAt(this.bh + 3 + drawY);
-                        c2.draw(new AtomicInteger(0));
-                    }
-                    renderHeight += compHeight;
-                }
-                GL11.glDisable(GL11.GL_SCISSOR_TEST);
-                if (height > MAX_HEIGHT) {
-                    float scrollY = (float) this.y + this.bh + 3 + (float) (animScroll * MAX_HEIGHT / height);
-                    Gui.drawRect(this.x + this.width - 2, (int) scrollY, this.x + this.width, (int) (scrollY + ((float) MAX_HEIGHT * MAX_HEIGHT / height)), new Color(255, 255, 255, 60).getRGB());
-                }
+        float middlePos = this.x + this.width / 2 - titleRenderer.width(this.category) / 2.0f;
+
+        float contentBottom = layoutMetrics.contentBottom;
+
+        float extra;
+        if (smoothTimer != null) {
+            float targetHeight = this.opened ? contentBottom : (this.y + this.titleHeight + 4);
+            extra = smoothTimer.getValueFloat(animationStartHeight, targetHeight, 1);
+            if ((this.opened && extra > targetHeight) || (!this.opened && extra < targetHeight)) {
+                extra = targetHeight;
             }
         } else {
-            if (!this.modulesInCategory.isEmpty() && this.categoryOpened) {
-                int displayHeight = Math.min(height, MAX_HEIGHT);
-                Gui.drawRect(this.x - 1, this.y, this.x + this.width + 1, this.y + this.bh + displayHeight + 4, new Color(0, 0, 0, 100).getRGB());
+            extra = contentBottom;
+        }
+
+        float targetNamePos = this.opened ? middlePos : (this.x + 12);
+        float namePos;
+        if (textTimer == null) {
+            namePos = targetNamePos;
+        } else {
+            namePos = textTimer.getValueFloat(animationStartNamePos, targetNamePos, 1);
+        }
+        this.lastNamePos = namePos;
+        this.lastHeight = extra;
+
+        GL11.glPushMatrix();
+
+        RenderUtils.drawRoundedGradientOutlinedRectangle(this.x - 2, this.y, this.x + this.width + 2, extra, 10, TRANSLUCENT_BACKGROUND,
+                REGULAR_OUTLINE, REGULAR_OUTLINE2);
+        renderItemForCategory(this.category, (int) (this.x + 1), (int) (this.y + 4), opened || hovering);
+        titleRenderer.draw(this.category, namePos, this.y + 4, CATEGORY_NAME_COLOR, false);
+
+        float moduleAreaTop = this.y + this.titleHeight + 3;
+        float scissorBottom = extra - 2f;
+        float moduleAreaHeight = Math.max(0f, scissorBottom - moduleAreaTop);
+
+        if (this.opened || smoothTimer != null) {
+            GL11.glEnable(GL11.GL_SCISSOR_TEST);
+            RenderUtils.scissor(0, moduleAreaTop, this.x + this.width + 4, moduleAreaHeight);
+
+            float scrollOffset = moduleY - this.y;
+            GL11.glPushMatrix();
+            GL11.glTranslatef(0f, scrollOffset, 0f);
+            for (Component c2 : this.modules) {
+                c2.render();
             }
-            Gui.drawRect((this.x - 2), this.y, (this.x + this.width + 2), (this.y + this.bh + 3), new Color(0, 0, 0, 200).getRGB());
-            renderer.drawString(this.categoryName, (float) (this.x + 2), (float) (this.y + 4), -1, false);
-            renderer.drawString(this.categoryOpened ? "-" : "+", (float) (this.x + marginX), (float) ((double) this.y + marginY), Color.white.getRGB(), false);
-            if (this.categoryOpened && !this.modulesInCategory.isEmpty()) {
-                int renderHeight = 0;
-                ScaledResolution sr = new ScaledResolution(Minecraft.getMinecraft());
-                double scale = sr.getScaleFactor();
-                int bottom = this.y + this.bh + MAX_HEIGHT + 3;
-                GL11.glEnable(GL11.GL_SCISSOR_TEST);
-                GL11.glScissor((int) (this.x * scale), (int) ((sr.getScaledHeight() - bottom) * scale), (int) (this.width * scale), (int) (MAX_HEIGHT * scale));
-                for (Component c2 : this.modulesInCategory) {
-                    int compHeight = c2.getHeight();
-                    if (renderHeight + compHeight > animScroll &&
-                            renderHeight < animScroll + MAX_HEIGHT) {
-                        int drawY = (int) (renderHeight - animScroll);
-                        c2.setComponentStartAt(this.bh + 3 + drawY);
-                        c2.draw(new AtomicInteger(0));
-                    }
-                    renderHeight += compHeight;
-                }
-                GL11.glDisable(GL11.GL_SCISSOR_TEST);
-                if (height > MAX_HEIGHT) {
-                    float scrollY = (float) this.y + this.bh + 3 + (float) (animScroll * MAX_HEIGHT / height);
-                    Gui.drawRect(this.x + this.width - 2, (int) scrollY, this.x + this.width, (int) (scrollY + ((float) MAX_HEIGHT * MAX_HEIGHT / height)), new Color(255, 255, 255, 60).getRGB());
-                }
-            }
+            GL11.glPopMatrix();
+
+            GL11.glDisable(GL11.GL_SCISSOR_TEST);
+        }
+
+        GL11.glPopMatrix();
+    }
+
+    public void updateHeight() {
+        float y = this.titleHeight + 3;
+        for (Component component : this.modules) {
+            component.updateHeight(y);
+            y += component.getHeightF();
         }
     }
 
-    private boolean insideAreaHover() {
-        int mx = org.lwjgl.input.Mouse.getX() * new ScaledResolution(Minecraft.getMinecraft()).getScaledWidth() / Minecraft.getMinecraft().displayWidth;
-        int my = new ScaledResolution(Minecraft.getMinecraft()).getScaledHeight() - org.lwjgl.input.Mouse.getY() * new ScaledResolution(Minecraft.getMinecraft()).getScaledHeight() / Minecraft.getMinecraft().displayHeight - 1;
-        return mx >= this.x && mx <= this.x + this.width && my >= this.y && my <= this.y + this.bh;
-    }
-
-    public void update() {
-        int offset = this.bh + 3;
-        for (Component component : this.modulesInCategory) {
-            component.setComponentStartAt(offset);
-            offset += component.getHeight();
-        }
-    }
-
-    public int getX() {
+    public float getX() {
         return this.x;
     }
 
-    public int getY() {
+    public float getY() {
         return this.y;
     }
 
-    public int getWidth() {
+    public float getModuleY() {
+        return this.moduleY;
+    }
+
+    public float getWidth() {
         return this.width;
     }
 
-    public void handleDrag(int x, int y) {
+    public void mousePosition(int mouseX, int mouseY, boolean isTopmostUnderCursor) {
         if (this.dragging) {
-            this.setX(x - this.xx);
-            this.setY(y - this.yy);
+            float newX = mouseX - this.xx;
+            float newY = mouseY - this.yy;
+
+            newX = Math.max(newX, 2);
+            newX = Math.min(newX, screenWidth - this.width - 4);
+
+            newY = Math.max(newY, 1);
+            int maxY = (int) (screenHeight - this.titleHeight - 5);
+            newY = Math.min(newY, maxY);
+
+            this.setX(newX, false);
+            this.setY(newY, false);
         }
+
+        hoveringOverCategory = isTopmostUnderCursor && overCategory(mouseX, mouseY);
+        hovering = isTopmostUnderCursor && overTitle(mouseX, mouseY);
     }
 
-    public boolean isHovered(int x, int y) {
-        return x >= this.x + 92 - 13 && x <= this.x + this.width && (float) y >= (float) this.y + 2.0F && y <= this.y + this.bh + 1;
+    public boolean overTitle(int x, int y) {
+        return x >= this.x && x <= this.x + this.width && (float) y >= (float) this.y + 2.0F && y <= this.y + this.titleHeight + 1;
     }
 
-    public boolean mousePressed(int x, int y) {
-        return x >= this.x + 77 && x <= this.x + this.width - 6 && (float) y >= (float) this.y + 2.0F && y <= this.y + this.bh + 1;
+    public boolean overCategory(int x, int y) {
+        return x >= this.x - 2 && x <= this.x + this.width + 2 && (float) y >= (float) this.y + 2.0F && y <= this.y + this.titleHeight + big + 1;
     }
 
-    public boolean insideArea(int x, int y) {
-        return x >= this.x && x <= this.x + this.width && y >= this.y && y <= this.y + this.bh;
+    public boolean draggable(int x, int y) {
+        return x >= this.x && x <= this.x + this.width && y >= this.y && y <= this.y + this.titleHeight;
     }
 
-    public String getName() {
-        return categoryName;
+    public boolean overRect(int x, int y) {
+        return x >= this.x - 2 && x <= this.x + this.width + 2 && y >= this.y && y <= lastHeight;
     }
 
-    public void setLocation(int parseInt, int parseInt1) {
-        this.x = parseInt;
-        this.y = parseInt1;
-    }
-
-    public void onScroll(int mouseX, int mouseY, int scrollAmount) {
-        if (!categoryOpened || height <= MAX_HEIGHT) return;
-
-        int areaTop = this.y + this.bh;
-        int areaBottom = this.y + this.bh + MAX_HEIGHT;
-
-        if (mouseX >= this.x && mouseX <= this.x + width && mouseY >= areaTop && mouseY <= areaBottom) {
-            scroll -= scrollAmount * 12;
-            scroll = Math.max(0, Math.min(scroll, height - MAX_HEIGHT));
+    private void renderItemForCategory(String category, int x, int y, boolean enchant) {
+        RenderItem renderItem = Minecraft.getMinecraft().getRenderItem();
+        double scale = 0.55;
+        GlStateManager.pushMatrix();
+        GlStateManager.scale(scale, scale, scale);
+        CategoryIconStacks iconStacks = CATEGORY_ICON_STACKS.get(category);
+        ItemStack itemStack = iconStacks == null ? null : (enchant ? iconStacks.activeStack : iconStacks.normalStack);
+        if (itemStack != null) {
+            RenderHelper.enableGUIStandardItemLighting();
+            GlStateManager.disableBlend();
+            GlStateManager.translate((float) (x / scale), (float) (y / scale), 0);
+            renderItem.renderItemAndEffectIntoGUI(itemStack, 0, 0);
+            GlStateManager.enableBlend();
+            RenderHelper.disableStandardItemLighting();
         }
+        GlStateManager.scale(1, 1, 1);
+        GlStateManager.popMatrix();
+    }
+
+    private float getCurrentAnimatedNamePos() {
+        if (textTimer != null) {
+            return lastNamePos;
+        }
+        float middlePos = this.x + this.width / 2 - Fonts.MINECRAFT.get(24).width(this.category) / 2.0f;
+        return this.opened ? middlePos : (this.x + 12);
+    }
+
+    private float getCurrentAnimatedCategoryHeight() {
+        if (this.lastHeight > 0) {
+            return this.lastHeight;
+        }
+        if (!this.modules.isEmpty() && (this.opened || this.smoothTimer != null)) {
+            float modulesHeight = 0f;
+            for (Component c : this.modules) {
+                modulesHeight += c.getHeightF();
+            }
+            return this.y + this.titleHeight + modulesHeight + 4;
+        }
+        return this.y + this.titleHeight + 4;
+    }
+
+    public void setScreenSize(float screenWidth, float screenHeight) {
+        this.screenWidth = screenWidth;
+        this.screenHeight = screenHeight;
+    }
+
+    public void limitPositions() {
+        setX(this.x, true);
+        setY(this.y, true);
+    }
+
+    public void applySavedState(float x, float y, boolean opened, boolean clampToScreen) {
+        if (clampToScreen) {
+            setX(x, true);
+            setY(y, true);
+        } else {
+            float scrollOffset = scrollAnim.getTarget() - this.y;
+            this.x = x;
+            this.y = y;
+            float newTarget = y + scrollOffset;
+            this.moduleY = newTarget;
+            scrollAnim.reset(newTarget);
+        }
+        this.opened = opened;
+        smoothTimer = null;
+        textTimer = null;
+        if (opened) {
+            boolean hasContent = !this.modules.isEmpty();
+            if (hasContent) {
+                CategoryLayoutMetrics layoutMetrics = computeLayoutMetrics(true);
+                this.big = layoutMetrics.visibleHeight;
+                this.lastHeight = layoutMetrics.contentBottom;
+            } else {
+                this.big = 0f;
+                this.lastHeight = this.y + this.titleHeight + 4;
+            }
+        } else {
+            this.big = 0f;
+            this.lastHeight = this.y + this.titleHeight + 4;
+        }
+        this.moduleY = this.y;
+        scrollAnim.reset(this.y);
+    }
+
+    public void onGuiClosed() {
+        if (smoothTimer != null || textTimer != null) {
+            float finalHeight = this.y + this.titleHeight;
+            if (this.opened) {
+                if (!this.modules.isEmpty()) {
+                    float modulesHeight = 0f;
+                    for (Component c : this.modules) {
+                        modulesHeight += c.getHeightF();
+                    }
+                    finalHeight += modulesHeight + 4;
+                } else {
+                    finalHeight += 4;
+                }
+            } else {
+                finalHeight += 4;
+            }
+            this.lastHeight = finalHeight;
+        }
+
+        smoothTimer = null;
+        textTimer = null;
+        moduleY = scrollAnim.getTarget();
+        scrollAnim.reset(moduleY);
+    }
+
+    private CategoryLayoutMetrics computeLayoutMetrics(boolean updateModuleOffsets) {
+        if (this.modules.isEmpty() || (!this.opened && this.smoothTimer == null)) {
+            return new CategoryLayoutMetrics(0f, this.y, this.y + this.titleHeight + 4);
+        }
+
+        float maxModulesHeight = (this.screenHeight * 0.9f) - this.titleHeight - 4;
+        float visibleHeight = 0f;
+        float totalScrollExtent = 0f;
+        float moduleOffset = this.titleHeight + 3;
+
+        for (Component component : this.modules) {
+            if (updateModuleOffsets) {
+                component.updateHeight(moduleOffset);
+            }
+
+            float componentHeight = component.getHeightF();
+            moduleOffset += componentHeight;
+            totalScrollExtent += component.getScrollExtentHeightF();
+
+            if (visibleHeight < maxModulesHeight) {
+                visibleHeight += Math.min(componentHeight, maxModulesHeight - visibleHeight);
+            }
+        }
+
+        float viewport = Math.min(maxModulesHeight, totalScrollExtent);
+        float overflow = Math.max(0f, totalScrollExtent - viewport);
+        float minScrollY = overflow > 0f ? this.y - overflow : this.y;
+        float maxBottom = this.y + (this.screenHeight * 0.9f);
+        float contentBottom = Math.min(this.y + this.titleHeight + visibleHeight + 4, maxBottom);
+        return new CategoryLayoutMetrics(Math.max(0f, visibleHeight), minScrollY, contentBottom);
+    }
+
+    private static Map<String, CategoryIconStacks> buildCategoryIconStacks() {
+        Map<String, CategoryIconStacks> iconStacks = new HashMap<>();
+        String[] categories = new String[]{"Combat", "Movement", "Render", "Player", "Misc", "Latency", "Minigames", "Target", "OnlineConfig"};
+        for (String cat : categories) {
+            ItemStack normalStack = createCategoryIconStack(cat, false);
+            ItemStack activeStack = createCategoryIconStack(cat, true);
+            if (normalStack != null && activeStack != null) {
+                iconStacks.put(cat, new CategoryIconStacks(normalStack, activeStack));
+            }
+        }
+        return iconStacks;
+    }
+
+    private static ItemStack createCategoryIconStack(String category, boolean active) {
+        ItemStack itemStack;
+        if (category.equalsIgnoreCase("Combat")) {
+            itemStack = new ItemStack(Items.diamond_sword);
+        } else if (category.equalsIgnoreCase("Movement")) {
+            itemStack = new ItemStack(Items.diamond_boots);
+        } else if (category.equalsIgnoreCase("Render")) {
+            itemStack = new ItemStack(Items.ender_eye);
+        } else if (category.equalsIgnoreCase("Player")) {
+            itemStack = new ItemStack(Items.golden_apple);
+        } else if (category.equalsIgnoreCase("Misc")) {
+            itemStack = new ItemStack(Items.clock);
+        } else if (category.equalsIgnoreCase("Latency")) {
+            itemStack = new ItemStack(Items.compass);
+        } else if (category.equalsIgnoreCase("Minigames")) {
+            itemStack = new ItemStack(Items.gold_ingot);
+        } else if (category.equalsIgnoreCase("OnlineConfig")) {
+            itemStack = new ItemStack(Items.writable_book);
+        } else if (category.equalsIgnoreCase("Target")) {
+            itemStack = new ItemStack(Items.arrow);
+        } else {
+            return null;
+        }
+
+        if (!active) {
+            return itemStack;
+        }
+
+        if (!category.equalsIgnoreCase("Player")) {
+            itemStack.addEnchantment(Enchantment.unbreaking, 2);
+        } else {
+            itemStack.setItemDamage(1);
+        }
+        return itemStack;
     }
 }
