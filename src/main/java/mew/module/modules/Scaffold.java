@@ -327,20 +327,17 @@ public class Scaffold extends Module {
                             }
                             break;
                         case 4:
-                            this.yaw = RotationUtil.quantizeAngle(yawDiffTo180 + RandomUtil.nextFloat(-0.3F, 0.3F));
-                            this.pitch = RotationUtil.quantizeAngle(RandomUtil.nextFloat(88.5F, 90.5F));
+                            this.yaw = RotationUtil.quantizeAngle(yawDiffTo180);
+                            this.pitch = RotationUtil.quantizeAngle(90.0F);
                             break;
                         case 5:
                             if (this.yaw == -180.0F && this.pitch == 0.0F) {
-                                float startYaw = diagonalYaw + RandomUtil.nextFloat(-1.0F, 1.0F);
-                                float startPitch = RandomUtil.nextFloat(82.0F, 87.0F);
-                                this.yaw = RotationUtil.quantizeAngle(startYaw);
-                                this.pitch = RotationUtil.quantizeAngle(startPitch);
+                                this.yaw = RotationUtil.quantizeAngle(diagonalYaw);
+                                this.pitch = RotationUtil.quantizeAngle(85.0F);
                                 this.smoothYaw = this.yaw;
                                 this.smoothPitch = this.pitch;
                             } else {
-                                float offset = RandomUtil.nextFloat(-0.3F, 0.3F);
-                                this.yaw = RotationUtil.quantizeAngle(diagonalYaw + offset);
+                                this.yaw = RotationUtil.quantizeAngle(diagonalYaw);
                             }
                     }
                 }
@@ -411,7 +408,7 @@ public class Scaffold extends Module {
                             this.yaw = RotationUtil.quantizeAngle(diagonalYaw);
                             break;
                         case 4:
-                            this.yaw = RotationUtil.quantizeAngle(yawDiffTo180 + RandomUtil.nextFloat(-0.3F, 0.3F));
+                            this.yaw = RotationUtil.quantizeAngle(yawDiffTo180);
                     }
                 }
                 if (this.rotationMode.getValue() != 0) {
@@ -442,9 +439,15 @@ public class Scaffold extends Module {
                         this.rotationTick = 3;
                         this.towering = true;
                     }
-                    event.setRotation(targetYaw, targetPitch, 3);
+                    float sendYaw = targetYaw;
+                    float sendPitch = targetPitch;
+                    if (this.rotationMode.getValue() == 4) {
+                        sendYaw = RotationUtil.quantizeAngle(targetYaw + RandomUtil.nextFloat(-0.1F, 0.1F));
+                        sendPitch = RotationUtil.quantizeAngle(targetPitch + RandomUtil.nextFloat(-0.15F, 0.15F));
+                    }
+                    event.setRotation(sendYaw, sendPitch, 3);
                     if (this.moveFix.getValue() == 1) {
-                        event.setPervRotation(targetYaw, 3);
+                        event.setPervRotation(sendYaw, 3);
                     }
                 }
                 if (blockData != null && hitVec != null && this.rotationTick <= 0) {
