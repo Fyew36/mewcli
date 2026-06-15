@@ -406,23 +406,11 @@ public class Scaffold extends Module {
                             break;
                         case 3:
                             this.yaw = RotationUtil.quantizeAngle(diagonalYaw);
-                            break;
-                        case 4:
-                            this.yaw = RotationUtil.quantizeAngle(yawDiffTo180);
                     }
                 }
                 if (this.rotationMode.getValue() != 0) {
                     float targetYaw = this.yaw;
                     float targetPitch = this.pitch;
-                    if (this.rotationMode.getValue() == 5) {
-                        float smoothFactor = RandomUtil.nextFloat(0.12F, 0.28F);
-                        float dy = MathHelper.wrapAngleTo180_float(targetYaw - this.smoothYaw);
-                        float dp = targetPitch - this.smoothPitch;
-                        this.smoothYaw += dy * smoothFactor + RandomUtil.nextFloat(-0.05F, 0.05F);
-                        this.smoothPitch += dp * smoothFactor + RandomUtil.nextFloat(-0.05F, 0.05F);
-                        targetYaw = RotationUtil.quantizeAngle(this.smoothYaw + RandomUtil.nextFloat(-0.1F, 0.1F));
-                        targetPitch = RotationUtil.quantizeAngle(this.smoothPitch + RandomUtil.nextFloat(-0.1F, 0.1F));
-                    }
                     if (this.towering && (mc.thePlayer.motionY > 0.0 || mc.thePlayer.posY > (double) (this.startY + 1))) {
                         float yawDiff = MathHelper.wrapAngleTo180_float(this.yaw - event.getYaw());
                         float tolerance = this.rotationTick >= 2 ? RandomUtil.nextFloat(90.0F, 95.0F) : RandomUtil.nextFloat(30.0F, 35.0F);
@@ -439,15 +427,9 @@ public class Scaffold extends Module {
                         this.rotationTick = 3;
                         this.towering = true;
                     }
-                    float sendYaw = targetYaw;
-                    float sendPitch = targetPitch;
-                    if (this.rotationMode.getValue() == 4) {
-                        sendYaw = RotationUtil.quantizeAngle(targetYaw + RandomUtil.nextFloat(-0.1F, 0.1F));
-                        sendPitch = RotationUtil.quantizeAngle(targetPitch + RandomUtil.nextFloat(-0.15F, 0.15F));
-                    }
-                    event.setRotation(sendYaw, sendPitch, 3);
+                    event.setRotation(targetYaw, targetPitch, 3);
                     if (this.moveFix.getValue() == 1) {
-                        event.setPervRotation(sendYaw, 3);
+                        event.setPervRotation(targetYaw, 3);
                     }
                 }
                 if (blockData != null && hitVec != null && this.rotationTick <= 0) {
