@@ -10,6 +10,7 @@ import myau.util.*;
 import myau.property.properties.BooleanProperty;
 import myau.property.properties.FloatProperty;
 import myau.property.properties.IntProperty;
+import myau.property.properties.ModeProperty;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
@@ -23,6 +24,8 @@ public class AutoClicker extends Module {
     private long clickDelay = 0L;
     private boolean blockHitPending = false;
     private long blockHitDelay = 0L;
+    private float dynamicCPS;
+    public final ModeProperty mode = new ModeProperty("mode", 0, new String[]{"NORMAL", "EXTRA"});
     public final IntProperty minCPS = new IntProperty("min-cps", 8, 1, 20);
     public final IntProperty maxCPS = new IntProperty("max-cps", 12, 1, 20);
     public final BooleanProperty blockHit = new BooleanProperty("block-hit", false);
@@ -35,6 +38,11 @@ public class AutoClicker extends Module {
     public final FloatProperty hitBoxHorizontal = new FloatProperty("hit-box-horizontal", 0.2F, 0.0F, 1.0F, this.breakBlocks::getValue);
 
     private long getNextClickDelay() {
+        if (this.mode.getValue() == 1) {
+            this.dynamicCPS += (float)(Math.random() - 0.5) * 2.5F;
+            this.dynamicCPS = Math.max(this.minCPS.getValue(), Math.min(this.maxCPS.getValue(), this.dynamicCPS));
+            return (long) (1000.0 / this.dynamicCPS);
+        }
         return 1000L / RandomUtil.nextLong(this.minCPS.getValue(), this.maxCPS.getValue());
     }
 
@@ -152,25 +160,36 @@ public class AutoClicker extends Module {
     public void onEnabled() {
         this.clickDelay = 0L;
         this.blockHitDelay = 0L;
+        this.dynamicCPS = (float)(this.minCPS.getValue() + this.maxCPS.getValue()) / 2.0F;
     }
 
     @Override
     public void verifyValue(String mode) {
-        if (this.minCPS.getName().equals(mode)) {
+        if (this.mode.getName().equals(mode)) {
+            this.dynamicCPS = (float)(this.minCPS.getValue() + this.maxCPS.getValue()) / 2.0F;
+        } else if (this.minCPS.getName().equals(mode)) {
             if (this.minCPS.getValue() > this.maxCPS.getValue()) {
                 this.maxCPS.setValue(this.minCPS.getValue());
             }
+            this.dynamicCPS = (float)(this.minCPS.getValue() + this.maxCPS.getValue()) / 2.0F;
         } else {
-            if (this.maxCPS.getName().equals(mode) && this.minCPS.getValue() > this.maxCPS.getValue()) {
-                this.minCPS.setValue(this.maxCPS.getValue());
+            if (this.maxCPS.getName().equals(mode)) {
+                if (this.minCPS.getValue() > this.maxCPS.getValue()) {
+                    this.minCPS.setValue(this.maxCPS.getValue());
+                }
+                this.dynamicCPS = (float)(this.minCPS.getValue() + this.maxCPS.getValue()) / 2.0F;
             }
         }
     }
 
     @Override
     public String[] getSuffix() {
-        return Objects.equals(this.minCPS.getValue(), this.maxCPS.getValue())
-                ? new String[]{this.minCPS.getValue().toString()}
-                : new String[]{String.format("%d-%d", this.minCPS.getValue(), this.maxCPS.getValue())};
+        String cps = Objects.equals(this.minCPS.getValue(), this.maxCPS.getValue())
+                ? this.minCPS.getValue().toString()
+                : String.format("%d-%d", this.minCPS.getValue(), this.maxCPS.getValue());
+        if (this.mode.getValue() == 1) {
+            return new String[]{"EXTRA", cps};
+        }
+        return new String[]{cps};
     }
 }

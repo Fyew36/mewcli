@@ -1,10 +1,11 @@
 [
   {
-    "name": "Myau",
+    "name": "mewcli",
     "version": "${version}",
     "mcversion": "1.8.9",
     "authorList": [
-      "ksyz"
+      "Fyew36",
+      "60124808866"
     ]
   }
 ]

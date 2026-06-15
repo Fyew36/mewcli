@@ -64,6 +64,10 @@ public class KillAura extends Module {
     private long attackDelayMS = 0L;
     private int blockTick = 0;
     private int lastTickProcessed;
+    private float extraPrevYaw;
+    private float extraPrevPitch;
+    private int extraSmoothBackTicks;
+    private float extraDynamicCPS;
     public final ModeProperty mode;
     public final ModeProperty sort;
     public final ModeProperty autoBlock;
@@ -76,6 +80,7 @@ public class KillAura extends Module {
     public final IntProperty fov;
     public final IntProperty minCPS;
     public final IntProperty maxCPS;
+    public final ModeProperty apsMode;
     public final IntProperty switchDelay;
     public final ModeProperty rotations;
     public final ModeProperty moveFix;
@@ -99,7 +104,15 @@ public class KillAura extends Module {
     public final ModeProperty debugLog;
 
     private long getAttackDelay() {
-        return this.isBlocking ? (long) (1000.0F / RandomUtil.nextLong(this.autoBlockMinCPS.getValue().longValue(), this.autoBlockMaxCPS.getValue().longValue())) : 1000L / RandomUtil.nextLong(this.minCPS.getValue(), this.maxCPS.getValue());
+        if (this.isBlocking) {
+            return (long) (1000.0F / RandomUtil.nextLong(this.autoBlockMinCPS.getValue().longValue(), this.autoBlockMaxCPS.getValue().longValue()));
+        }
+        if (this.apsMode.getValue() == 1) {
+            this.extraDynamicCPS += (float)(Math.random() - 0.5) * 3.0F;
+            this.extraDynamicCPS = Math.max(this.minCPS.getValue(), Math.min(this.maxCPS.getValue(), this.extraDynamicCPS));
+            return (long) (1000.0 / this.extraDynamicCPS);
+        }
+        return 1000L / RandomUtil.nextLong(this.minCPS.getValue(), this.maxCPS.getValue());
     }
 
     private boolean performAttack(float yaw, float pitch) {
@@ -338,8 +351,9 @@ public class KillAura extends Module {
         this.fov = new IntProperty("fov", 360, 30, 360);
         this.minCPS = new IntProperty("min-aps", 14, 1, 20);
         this.maxCPS = new IntProperty("max-aps", 14, 1, 20);
+        this.apsMode = new ModeProperty("aps-mode", 0, new String[]{"NORMAL", "EXTRA"});
         this.switchDelay = new IntProperty("switch-delay", 150, 0, 1000);
-        this.rotations = new ModeProperty("rotations", 2, new String[]{"NONE", "LEGIT", "SILENT", "LOCK_VIEW"});
+        this.rotations = new ModeProperty("rotations", 4, new String[]{"NONE", "LEGIT", "SILENT", "LOCK_VIEW", "EXTRA"});
         this.moveFix = new ModeProperty("move-fix", 1, new String[]{"NONE", "SILENT", "STRICT"});
         this.smoothing = new PercentProperty("smoothing", 0);
         this.angleStep = new IntProperty("angle-step", 90, 30, 180);
@@ -359,6 +373,10 @@ public class KillAura extends Module {
         this.teams = new BooleanProperty("teams", true);
         this.showTarget = new ModeProperty("show-target", 0, new String[]{"NONE", "DEFAULT", "HUD"});
         this.debugLog = new ModeProperty("debug-log", 0, new String[]{"NONE", "HEALTH"});
+        this.extraPrevYaw = 0.0F;
+        this.extraPrevPitch = 0.0F;
+        this.extraSmoothBackTicks = 0;
+        this.extraDynamicCPS = (float)(this.minCPS.getValue() + this.maxCPS.getValue()) / 2.0F;
     }
 
     public EntityLivingBase getTarget() {
@@ -670,25 +688,45 @@ public class KillAura extends Module {
                 }
                 boolean attacked = false;
                 if (this.isBoxInSwingRange(this.target.getBox())) {
-                    if (this.rotations.getValue() == 2 || this.rotations.getValue() == 3) {
-                        float[] rotations = RotationUtil.getRotationsToBox(
-                                this.target.getBox(),
-                                event.getYaw(),
-                                event.getPitch(),
-                                (float) this.angleStep.getValue() + RandomUtil.nextFloat(-5.0F, 5.0F),
-                                (float) this.smoothing.getValue() / 100.0F
-                        );
+                        if (this.rotations.getValue() == 2 || this.rotations.getValue() == 3 || this.rotations.getValue() == 4) {
+                        float[] rotations;
+                        if (this.rotations.getValue() == 4) {
+                            float step = (float) this.angleStep.getValue() * 0.4F + RandomUtil.nextFloat(-5.0F, 10.0F);
+                            float smooth = (float) this.smoothing.getValue() / 120.0F + 0.2F;
+                            rotations = RotationUtil.getRotationsToBox(
+                                    this.target.getBox(), event.getYaw(), event.getPitch(),
+                                    MathHelper.clamp_float(step, 5.0F, 90.0F),
+                                    MathHelper.clamp_float(smooth, 0.1F, 0.8F)
+                            );
+                            rotations[0] += (float)(Math.random() - 0.5) * 0.5F;
+                            rotations[1] += (float)(Math.random() - 0.5) * 0.6F;
+                            this.extraPrevYaw = rotations[0];
+                            this.extraPrevPitch = rotations[1];
+                            this.extraSmoothBackTicks = 0;
+                        } else {
+                            rotations = RotationUtil.getRotationsToBox(
+                                    this.target.getBox(), event.getYaw(), event.getPitch(),
+                                    (float) this.angleStep.getValue() + RandomUtil.nextFloat(-5.0F, 5.0F),
+                                    (float) this.smoothing.getValue() / 100.0F
+                            );
+                        }
                         event.setRotation(rotations[0], rotations[1], 1);
                         if (this.rotations.getValue() == 3) {
                             Myau.rotationManager.setRotation(rotations[0], rotations[1], 1, true);
                         }
-                        if (this.moveFix.getValue() != 0 || this.rotations.getValue() == 3) {
+                        if (this.moveFix.getValue() != 0 || this.rotations.getValue() == 3 || this.rotations.getValue() == 4) {
                             event.setPervRotation(rotations[0], 1);
                         }
                     }
                     if (attack) {
                         attacked = this.performAttack(event.getNewYaw(), event.getNewPitch());
                     }
+                } else if (this.rotations.getValue() == 4 && this.extraSmoothBackTicks < 10) {
+                    float backYaw = event.getYaw() + MathHelper.wrapAngleTo180_float(this.extraPrevYaw - event.getYaw()) * 0.15F;
+                    float backPitch = this.extraPrevPitch + (event.getPitch() - this.extraPrevPitch) * 0.15F;
+                    event.setRotation(backYaw, backPitch, 1);
+                    event.setPervRotation(backYaw, 1);
+                    this.extraSmoothBackTicks++;
                 }
                 if (swap) {
                     if (attacked) {
@@ -943,7 +981,9 @@ public class KillAura extends Module {
                 || this.autoBlock.getValue() == 6
                 || this.autoBlock.getValue() == 7;
         if (!this.autoBlock.getName().equals(value)) {
-            if (this.swingRange.getName().equals(value)) {
+            if (this.apsMode.getName().equals(value)) {
+                this.extraDynamicCPS = (float)(this.minCPS.getValue() + this.maxCPS.getValue()) / 2.0F;
+            } else if (this.swingRange.getName().equals(value)) {
                 if (this.swingRange.getValue() < this.attackRange.getValue()) {
                     this.attackRange.setValue(this.swingRange.getValue());
                 }
@@ -955,6 +995,7 @@ public class KillAura extends Module {
                 if (this.minCPS.getValue() > this.maxCPS.getValue()) {
                     this.maxCPS.setValue(this.minCPS.getValue());
                 }
+                this.extraDynamicCPS = (float)(this.minCPS.getValue() + this.maxCPS.getValue()) / 2.0F;
             } else if (this.autoBlockMinCPS.getName().equals(value)) {
                 if (this.autoBlockMinCPS.getValue() > this.autoBlockMaxCPS.getValue()) {
                     this.autoBlockMaxCPS.setValue(this.autoBlockMinCPS.getValue());
@@ -970,8 +1011,11 @@ public class KillAura extends Module {
                     autoBlockMaxCPS.setValue(10.0F);
                 }
             } else {
-                if (this.maxCPS.getName().equals(value) && this.minCPS.getValue() > this.maxCPS.getValue()) {
-                    this.minCPS.setValue(this.maxCPS.getValue());
+                if (this.maxCPS.getName().equals(value)) {
+                    if (this.minCPS.getValue() > this.maxCPS.getValue()) {
+                        this.minCPS.setValue(this.maxCPS.getValue());
+                    }
+                    this.extraDynamicCPS = (float)(this.minCPS.getValue() + this.maxCPS.getValue()) / 2.0F;
                 }
             }
         } else {

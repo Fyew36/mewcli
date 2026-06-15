@@ -21,7 +21,7 @@ import java.util.List;
 
 public class ClickGui extends GuiScreen {
     private static ClickGui instance;
-    private final File configFile = new File("./config/Myau/", "clickgui.txt");
+    private final File configFile = new File("./config/mewcli/", "clickgui.txt");
     private final ArrayList<CategoryComponent> categoryList;
 
     public ClickGui() {
@@ -167,8 +167,8 @@ public class ClickGui extends GuiScreen {
     public void drawScreen(int x, int y, float p) {
         drawRect(0, 0, this.width, this.height, new Color(0, 0, 0, 100).getRGB());
 
-        mc.fontRendererObj.drawStringWithShadow("Myau " + Myau.version, 4, this.height - 3 - mc.fontRendererObj.FONT_HEIGHT * 2, new Color(60, 162, 253).getRGB());
-        mc.fontRendererObj.drawStringWithShadow("dev, ksyz", 4, this.height - 3 - mc.fontRendererObj.FONT_HEIGHT, new Color(60, 162, 253).getRGB());
+        mc.fontRendererObj.drawStringWithShadow("mewcli " + Myau.version, 4, this.height - 3 - mc.fontRendererObj.FONT_HEIGHT * 2, new Color(60, 162, 253).getRGB());
+        mc.fontRendererObj.drawStringWithShadow("Fyew36, 60124808866", 4, this.height - 3 - mc.fontRendererObj.FONT_HEIGHT, new Color(60, 162, 253).getRGB());
 
         for (CategoryComponent category : categoryList) {
             category.render(this.fontRendererObj);

@@ -10,7 +10,7 @@ import java.util.Arrays;
 
 public class ListCommand extends Command {
     public ListCommand() {
-        super(new ArrayList<>(Arrays.asList("list", "l", "modules", "myau")));
+        super(new ArrayList<>(Arrays.asList("list", "l", "modules", "mewcli")));
     }
 
     @Override
