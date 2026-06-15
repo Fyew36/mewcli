@@ -28,6 +28,9 @@ import java.util.Map;
 public class ModuleComponent extends Component {
     public Module mod;
     public CategoryComponent categoryComponent;
+    public CategoryComponent category;
+    public int offsetY;
+    public boolean panelExpand;
     public float yPos;
     public ArrayList<Component> settings;
     public boolean isOpened;
@@ -49,6 +52,7 @@ public class ModuleComponent extends Component {
     public ModuleComponent(Module mod, CategoryComponent p, float yPos) {
         this.mod = mod;
         this.categoryComponent = p;
+        this.category = p;
         this.yPos = yPos;
         this.settings = new ArrayList<>();
         this.categoryManager = false;

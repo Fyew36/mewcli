@@ -23,6 +23,7 @@ import java.util.Comparator;
 import java.util.List;
 
 public class ClickGui extends GuiScreen {
+    private static ClickGui instance;
     private Timer backgroundFade;
     private Timer blurSmooth;
     private ScaledResolution sr;
@@ -53,6 +54,7 @@ public class ClickGui extends GuiScreen {
     @Override
     public void initGui() {
         super.initGui();
+        instance = this;
         this.sr = new ScaledResolution(mc);
         this.actualScreenWidth = this.sr.getScaledWidth();
         this.actualScreenHeight = this.sr.getScaledHeight();
@@ -235,5 +237,13 @@ public class ClickGui extends GuiScreen {
 
     public static double getActiveRenderScale() {
         return 1.0D;
+    }
+
+    public static ClickGui getInstance() {
+        return instance;
+    }
+
+    public static boolean isModern() {
+        return false;
     }
 }

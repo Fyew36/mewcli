@@ -35,7 +35,7 @@ public class CheckBoxComponent implements Component {
             int toggleSize = 8;
 
             int bgColor = this.property.getValue()
-                    ? ((HUD) Myau.moduleManager.modules.get(HUD.class)).getColor(System.currentTimeMillis(), offset.get()).getRGB()
+                    ? ((HUD) Mew.moduleManager.modules.get(HUD.class)).getColor(System.currentTimeMillis(), offset.get()).getRGB()
                     : new Color(60, 60, 70).getRGB();
 
             Gui.drawRect(cx, cy, cx + toggleSize, cy + toggleSize, bgColor);
