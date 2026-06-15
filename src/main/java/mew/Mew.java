@@ -105,6 +105,7 @@ public class Mew {
         moduleManager.modules.put(MCF.class, new MCF());
         moduleManager.modules.put(NameTags.class, new NameTags());
         moduleManager.modules.put(NickHider.class, new NickHider());
+        moduleManager.modules.put(Optimization.class, new Optimization());
         moduleManager.modules.put(NoFall.class, new NoFall());
         moduleManager.modules.put(NoHitDelay.class, new NoHitDelay());
         moduleManager.modules.put(NoHurtCam.class, new NoHurtCam());
