@@ -1,7 +1,7 @@
 package mew.util.render;
 
 import mew.mixin.IAccessorMinecraft;
-import mew.ui.clickgui.ClickGui;
+
 import mew.util.ColorUtil;
 import net.minecraft.block.BlockStairs;
 import net.minecraft.block.state.IBlockState;
@@ -121,7 +121,7 @@ public class RenderUtils {
      * the clip rectangle does not lose/gain a pixel at animation boundaries.
      */
     public static void scissor(double x, double y, double width, double height) {
-        double guiScale = ClickGui.getActiveRenderScale();
+        double guiScale = mc.getScaleFactor();
         x *= guiScale;
         y *= guiScale;
         width *= guiScale;
@@ -153,7 +153,7 @@ public class RenderUtils {
     private static int scissorPushDepth = 0;
 
     public static void scissorPushGui(double x, double y, double width, double height) {
-        double guiScale = ClickGui.getActiveRenderScale();
+        double guiScale = mc.getScaleFactor();
         x *= guiScale;
         y *= guiScale;
         width *= guiScale;
