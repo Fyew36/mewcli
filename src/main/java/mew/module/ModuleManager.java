@@ -15,7 +15,7 @@ import java.util.stream.*;
 
 public class ModuleManager {
 
-    private static final List<String> CATEGORIES = List.of("Combat", "Movement", "Render", "Player", "Misc", "Latency", "Minigames", "Target");
+    private static final List<String> CATEGORIES = Arrays.asList("Combat", "Movement", "Render", "Player", "Misc", "Latency", "Minigames", "Target");
     private boolean sound = false;
     public final LinkedHashMap<Class<?>, Module> modules = new LinkedHashMap<>();
 

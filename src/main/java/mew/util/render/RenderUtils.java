@@ -121,7 +121,7 @@ public class RenderUtils {
      * the clip rectangle does not lose/gain a pixel at animation boundaries.
      */
     public static void scissor(double x, double y, double width, double height) {
-        double guiScale = mc.getScaleFactor();
+        double guiScale = new ScaledResolution(mc).getScaleFactor();
         x *= guiScale;
         y *= guiScale;
         width *= guiScale;
@@ -153,7 +153,7 @@ public class RenderUtils {
     private static int scissorPushDepth = 0;
 
     public static void scissorPushGui(double x, double y, double width, double height) {
-        double guiScale = mc.getScaleFactor();
+        double guiScale = new ScaledResolution(mc).getScaleFactor();
         x *= guiScale;
         y *= guiScale;
         width *= guiScale;
