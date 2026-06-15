@@ -62,7 +62,9 @@ public class Scaffold extends Module {
     private boolean shouldKeepY = false;
     private boolean towering = false;
     private EnumFacing targetFacing = null;
-    public final ModeProperty rotationMode = new ModeProperty("rotations", 2, new String[]{"NONE", "DEFAULT", "BACKWARDS", "SIDEWAYS"});
+    private float smoothYaw;
+    private float smoothPitch;
+    public final ModeProperty rotationMode = new ModeProperty("rotations", 2, new String[]{"NONE", "DEFAULT", "BACKWARDS", "SIDEWAYS", "GODBRIDGE", "SMOOTH"});
     public final ModeProperty moveFix = new ModeProperty("move-fix", 1, new String[]{"NONE", "SILENT"});
     public final ModeProperty sprintMode = new ModeProperty("sprint", 0, new String[]{"NONE", "VANILLA"});
     public final PercentProperty groundMotion = new PercentProperty("ground-motion", 100);
@@ -75,6 +77,7 @@ public class Scaffold extends Module {
     public final BooleanProperty multiplace = new BooleanProperty("multi-place", true);
     public final BooleanProperty safeWalk = new BooleanProperty("safe-walk", true);
     public final BooleanProperty swing = new BooleanProperty("swing", true);
+    public final BooleanProperty eagle = new BooleanProperty("eagle", false);
     public final BooleanProperty itemSpoof = new BooleanProperty("item-spoof", false);
     public final BooleanProperty blockCounter = new BooleanProperty("block-counter", true);
 
@@ -319,6 +322,18 @@ public class Scaffold extends Module {
                             } else {
                                 this.yaw = RotationUtil.quantizeAngle(diagonalYaw);
                             }
+                            break;
+                        case 4:
+                            this.yaw = RotationUtil.quantizeAngle(yawDiffTo180);
+                            this.pitch = RotationUtil.quantizeAngle(90.0F);
+                            break;
+                        case 5:
+                            if (this.yaw == -180.0F && this.pitch == 0.0F) {
+                                this.yaw = RotationUtil.quantizeAngle(diagonalYaw);
+                                this.pitch = RotationUtil.quantizeAngle(85.0F);
+                            } else {
+                                this.yaw = RotationUtil.quantizeAngle(diagonalYaw);
+                            }
                     }
                 }
                 BlockData blockData = this.getBlockData();
@@ -386,11 +401,22 @@ public class Scaffold extends Module {
                             break;
                         case 3:
                             this.yaw = RotationUtil.quantizeAngle(diagonalYaw);
+                            break;
+                        case 4:
+                            this.yaw = RotationUtil.quantizeAngle(yawDiffTo180);
                     }
                 }
                 if (this.rotationMode.getValue() != 0) {
                     float targetYaw = this.yaw;
                     float targetPitch = this.pitch;
+                    if (this.rotationMode.getValue() == 5) {
+                        float dy = MathHelper.wrapAngleTo180_float(targetYaw - this.smoothYaw);
+                        float dp = targetPitch - this.smoothPitch;
+                        this.smoothYaw += dy * 0.2F;
+                        this.smoothPitch += dp * 0.2F;
+                        targetYaw = RotationUtil.quantizeAngle(this.smoothYaw);
+                        targetPitch = RotationUtil.quantizeAngle(this.smoothPitch);
+                    }
                     if (this.towering && (mc.thePlayer.motionY > 0.0 || mc.thePlayer.posY > (double) (this.startY + 1))) {
                         float yawDiff = MathHelper.wrapAngleTo180_float(this.yaw - event.getYaw());
                         float tolerance = this.rotationTick >= 2 ? RandomUtil.nextFloat(90.0F, 95.0F) : RandomUtil.nextFloat(30.0F, 35.0F);
@@ -625,6 +651,12 @@ public class Scaffold extends Module {
             if (mc.thePlayer.onGround && this.stage > 0 && MoveUtil.isForwardPressed()) {
                 mc.thePlayer.movementInput.jump = true;
             }
+            if (this.eagle.getValue() && mc.thePlayer.onGround) {
+                BlockPos below = new BlockPos(mc.thePlayer.posX, mc.thePlayer.posY - 1.0, mc.thePlayer.posZ);
+                if (BlockUtil.isReplaceable(below)) {
+                    mc.thePlayer.movementInput.sneak = true;
+                }
+            }
         }
     }
 
@@ -734,6 +766,8 @@ public class Scaffold extends Module {
         this.rotationTick = 3;
         this.yaw = -180.0F;
         this.pitch = 0.0F;
+        this.smoothYaw = 0.0F;
+        this.smoothPitch = 0.0F;
         this.canRotate = false;
         this.towerTick = 0;
         this.towerDelay = 0;
