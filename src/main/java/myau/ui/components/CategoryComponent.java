@@ -1,6 +1,9 @@
 package myau.ui.components;
 
+import myau.Myau;
 import myau.module.Module;
+import myau.module.modules.HUD;
+import myau.ui.ClickGui;
 import myau.ui.Component;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
@@ -31,6 +34,8 @@ public class CategoryComponent {
     private int scroll = 0;
     private double animScroll = 0;
     private int height = 0;
+    private double animOpen = 0.0;
+    private float hoverFade = 0.0F;
 
     public CategoryComponent(String category, List<Module> modules) {
         this.categoryName = category;
@@ -83,6 +88,17 @@ public class CategoryComponent {
         this.categoryOpened = on;
     }
 
+    private void drawRoundedRect(int x, int y, int w, int h, int color) {
+        Gui.drawRect(x + 2, y, x + w - 2, y + h, color);
+        Gui.drawRect(x, y + 2, x + w, y + h - 2, color);
+        Gui.drawRect(x + 1, y + 1, x + w - 1, y + h - 1, color);
+    }
+
+    private void drawGradientRect(int x, int y, int w, int h, int color1, int color2) {
+        Gui.drawRect(x, y, x + w, y + h, color1);
+        Gui.drawRect(x, y + h / 2, x + w, y + h, color2);
+    }
+
     public void render(FontRenderer renderer) {
         this.width = 92;
         update();
@@ -94,36 +110,96 @@ public class CategoryComponent {
         if (scroll > maxScroll) scroll = maxScroll;
         if (animScroll > maxScroll) animScroll = maxScroll;
         animScroll += (scroll - animScroll) * 0.2;
-        if (!this.modulesInCategory.isEmpty() && this.categoryOpened) {
-            int displayHeight = Math.min(height, MAX_HEIGHT);
-            Gui.drawRect(this.x - 1, this.y, this.x + this.width + 1, this.y + this.bh + displayHeight + 4, new Color(0, 0, 0, 100).getRGB());
-        }
-        Gui.drawRect((this.x - 2), this.y, (this.x + this.width + 2), (this.y + this.bh + 3), new Color(0, 0, 0, 200).getRGB());
-        renderer.drawString(this.categoryName, (float) (this.x + 2), (float) (this.y + 4), -1, false);
-        renderer.drawString(this.categoryOpened ? "-" : "+", (float) (this.x + marginX), (float) ((double) this.y + marginY), Color.white.getRGB(), false);
-        if (this.categoryOpened && !this.modulesInCategory.isEmpty()) {
-            int renderHeight = 0;
-            ScaledResolution sr = new ScaledResolution(Minecraft.getMinecraft());
-            double scale = sr.getScaleFactor();
-            int bottom = this.y + this.bh + MAX_HEIGHT + 3;
-            GL11.glEnable(GL11.GL_SCISSOR_TEST);
-            GL11.glScissor((int) (this.x * scale), (int) ((sr.getScaledHeight() - bottom) * scale), (int) (this.width * scale), (int) (MAX_HEIGHT * scale));
-            for (Component c2 : this.modulesInCategory) {
-                int compHeight = c2.getHeight();
-                if (renderHeight + compHeight > animScroll &&
-                        renderHeight < animScroll + MAX_HEIGHT) {
-                    int drawY = (int) (renderHeight - animScroll);
-                    c2.setComponentStartAt(this.bh + 3 + drawY);
-                    c2.draw(new AtomicInteger(0));
+
+        if (ClickGui.isModern()) {
+            boolean hovered = insideAreaHover();
+            hoverFade += (hovered ? 0.08F : -0.08F);
+            hoverFade = Math.max(0.0F, Math.min(1.0F, hoverFade));
+
+            animOpen += (categoryOpened ? 0.15 : -0.15);
+            animOpen = Math.max(0.0, Math.min(1.0, animOpen));
+            int displayHeight = (int) (Math.min(height, MAX_HEIGHT) * animOpen);
+
+            int headerColor = new Color(15, 15, 20, 230).getRGB();
+            int bodyColor = new Color(10, 10, 15, 180).getRGB();
+
+            if (displayHeight > 0) {
+                drawRoundedRect(this.x, this.y + this.bh + 3, this.width, displayHeight, bodyColor);
+            }
+
+            drawRoundedRect(this.x, this.y, this.width, this.bh + 3, headerColor);
+
+            if (hoverFade > 0.01F) {
+                int glowAlpha = (int) (40 * hoverFade);
+                int glowColor = ((HUD) Myau.moduleManager.modules.get(HUD.class)).getColor(System.currentTimeMillis(), 0).getRGB();
+                Gui.drawRect(this.x, this.y, this.x + this.width, this.y + this.bh + 3, glowAlpha << 24 | (glowColor & 0x00FFFFFF));
+            }
+
+            renderer.drawString(this.categoryName, (float) (this.x + 4), (float) (this.y + 4), -1, false);
+            String toggleIcon = categoryOpened ? "-" : "+";
+            renderer.drawString(toggleIcon, (float) (this.x + marginX), (float) ((double) this.y + marginY), new Color(180, 180, 180).getRGB(), false);
+
+            if (displayHeight > 0 && !this.modulesInCategory.isEmpty()) {
+                int renderHeight = 0;
+                ScaledResolution sr = new ScaledResolution(Minecraft.getMinecraft());
+                double scale = sr.getScaleFactor();
+                int bottom = this.y + this.bh + MAX_HEIGHT + 3;
+                GL11.glEnable(GL11.GL_SCISSOR_TEST);
+                GL11.glScissor((int) (this.x * scale), (int) ((sr.getScaledHeight() - bottom) * scale), (int) (this.width * scale), (int) (MAX_HEIGHT * scale));
+                for (Component c2 : this.modulesInCategory) {
+                    int compHeight = c2.getHeight();
+                    if (renderHeight + compHeight > animScroll &&
+                            renderHeight < animScroll + MAX_HEIGHT) {
+                        int drawY = (int) (renderHeight - animScroll);
+                        c2.setComponentStartAt(this.bh + 3 + drawY);
+                        c2.draw(new AtomicInteger(0));
+                    }
+                    renderHeight += compHeight;
                 }
-                renderHeight += compHeight;
+                GL11.glDisable(GL11.GL_SCISSOR_TEST);
+                if (height > MAX_HEIGHT) {
+                    float scrollY = (float) this.y + this.bh + 3 + (float) (animScroll * MAX_HEIGHT / height);
+                    Gui.drawRect(this.x + this.width - 2, (int) scrollY, this.x + this.width, (int) (scrollY + ((float) MAX_HEIGHT * MAX_HEIGHT / height)), new Color(255, 255, 255, 60).getRGB());
+                }
             }
-            GL11.glDisable(GL11.GL_SCISSOR_TEST);
-            if (height > MAX_HEIGHT) {
-                float scrollY = (float) this.y + this.bh + 3 + (float) (animScroll * MAX_HEIGHT / height);
-                Gui.drawRect(this.x + this.width - 2, (int) scrollY, this.x + this.width, (int) (scrollY + ((float) MAX_HEIGHT * MAX_HEIGHT / height)), new Color(255, 255, 255, 60).getRGB());
+        } else {
+            if (!this.modulesInCategory.isEmpty() && this.categoryOpened) {
+                int displayHeight = Math.min(height, MAX_HEIGHT);
+                Gui.drawRect(this.x - 1, this.y, this.x + this.width + 1, this.y + this.bh + displayHeight + 4, new Color(0, 0, 0, 100).getRGB());
+            }
+            Gui.drawRect((this.x - 2), this.y, (this.x + this.width + 2), (this.y + this.bh + 3), new Color(0, 0, 0, 200).getRGB());
+            renderer.drawString(this.categoryName, (float) (this.x + 2), (float) (this.y + 4), -1, false);
+            renderer.drawString(this.categoryOpened ? "-" : "+", (float) (this.x + marginX), (float) ((double) this.y + marginY), Color.white.getRGB(), false);
+            if (this.categoryOpened && !this.modulesInCategory.isEmpty()) {
+                int renderHeight = 0;
+                ScaledResolution sr = new ScaledResolution(Minecraft.getMinecraft());
+                double scale = sr.getScaleFactor();
+                int bottom = this.y + this.bh + MAX_HEIGHT + 3;
+                GL11.glEnable(GL11.GL_SCISSOR_TEST);
+                GL11.glScissor((int) (this.x * scale), (int) ((sr.getScaledHeight() - bottom) * scale), (int) (this.width * scale), (int) (MAX_HEIGHT * scale));
+                for (Component c2 : this.modulesInCategory) {
+                    int compHeight = c2.getHeight();
+                    if (renderHeight + compHeight > animScroll &&
+                            renderHeight < animScroll + MAX_HEIGHT) {
+                        int drawY = (int) (renderHeight - animScroll);
+                        c2.setComponentStartAt(this.bh + 3 + drawY);
+                        c2.draw(new AtomicInteger(0));
+                    }
+                    renderHeight += compHeight;
+                }
+                GL11.glDisable(GL11.GL_SCISSOR_TEST);
+                if (height > MAX_HEIGHT) {
+                    float scrollY = (float) this.y + this.bh + 3 + (float) (animScroll * MAX_HEIGHT / height);
+                    Gui.drawRect(this.x + this.width - 2, (int) scrollY, this.x + this.width, (int) (scrollY + ((float) MAX_HEIGHT * MAX_HEIGHT / height)), new Color(255, 255, 255, 60).getRGB());
+                }
             }
         }
+    }
+
+    private boolean insideAreaHover() {
+        int mx = org.lwjgl.input.Mouse.getX() * new ScaledResolution(Minecraft.getMinecraft()).getScaledWidth() / Minecraft.getMinecraft().displayWidth;
+        int my = new ScaledResolution(Minecraft.getMinecraft()).getScaledHeight() - org.lwjgl.input.Mouse.getY() * new ScaledResolution(Minecraft.getMinecraft()).getScaledHeight() / Minecraft.getMinecraft().displayHeight - 1;
+        return mx >= this.x && mx <= this.x + this.width && my >= this.y && my <= this.y + this.bh;
     }
 
     public void update() {

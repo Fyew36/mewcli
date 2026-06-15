@@ -3,14 +3,17 @@ package myau.ui.components;
 import myau.Myau;
 import myau.module.modules.GuiModule;
 import myau.module.modules.HUD;
+import myau.ui.ClickGui;
 import myau.ui.Component;
 import myau.ui.dataset.BindStage;
 import myau.util.KeyBindUtil;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
+import java.awt.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class BindComponent implements Component {
@@ -28,11 +31,43 @@ public class BindComponent implements Component {
     }
 
     public void draw(AtomicInteger offset) {
-        GL11.glPushMatrix();
-        GL11.glScaled(0.5D, 0.5D, 0.5D);
-        String displayText = this.isBinding ? BindStage.binding : BindStage.bind + ": " + KeyBindUtil.getKeyName(this.parentModule.mod.getKey());
-        this.renderText(displayText, ((HUD) Myau.moduleManager.modules.get(HUD.class)).getColor(System.currentTimeMillis(), offset.get()).getRGB());
-        GL11.glPopMatrix();
+        if (ClickGui.isModern()) {
+            int color = this.isBinding
+                    ? new Color(100, 200, 255).getRGB()
+                    : ((HUD) Myau.moduleManager.modules.get(HUD.class)).getColor(System.currentTimeMillis(), offset.get()).getRGB();
+
+            String displayText = this.isBinding ? BindStage.binding : BindStage.bind + ": " + KeyBindUtil.getKeyName(this.parentModule.mod.getKey());
+
+            Gui.drawRect(
+                    this.parentModule.category.getX() + 4,
+                    this.parentModule.category.getY() + this.offsetY + 1,
+                    this.parentModule.category.getX() + this.parentModule.category.getWidth() - 4,
+                    this.parentModule.category.getY() + this.offsetY + 11,
+                    new Color(30, 30, 40, 100).getRGB()
+            );
+
+            GL11.glPushMatrix();
+            GL11.glScaled(0.5D, 0.5D, 0.5D);
+            Minecraft.getMinecraft().fontRendererObj.drawStringWithShadow(
+                    displayText,
+                    (float) ((this.parentModule.category.getX() + 6) * 2),
+                    (float) ((this.parentModule.category.getY() + this.offsetY + 2) * 2),
+                    color
+            );
+            GL11.glPopMatrix();
+        } else {
+            GL11.glPushMatrix();
+            GL11.glScaled(0.5D, 0.5D, 0.5D);
+            String displayText = this.isBinding ? BindStage.binding : BindStage.bind + ": " + KeyBindUtil.getKeyName(this.parentModule.mod.getKey());
+            int color = ((HUD) Myau.moduleManager.modules.get(HUD.class)).getColor(System.currentTimeMillis(), offset.get()).getRGB();
+            Minecraft.getMinecraft().fontRendererObj.drawStringWithShadow(
+                    displayText,
+                    (float) ((this.parentModule.category.getX() + 4) * 2),
+                    (float) ((this.parentModule.category.getY() + this.offsetY + 3) * 2),
+                    color
+            );
+            GL11.glPopMatrix();
+        }
     }
 
     @Override
@@ -47,12 +82,12 @@ public class BindComponent implements Component {
             this.isBinding = !this.isBinding;
         } else if (this.isBinding && this.parentModule.panelExpand) {
             int keyIndex = button - 100;
-            
+
             if (button == 0) {
                 this.isBinding = false;
                 return;
             }
-            
+
             this.parentModule.mod.setKey(keyIndex);
             this.isBinding = false;
         }
@@ -70,8 +105,8 @@ public class BindComponent implements Component {
                 this.isBinding = false;
                 return;
             }
-            
-            if (keyCode == 11) { 
+
+            if (keyCode == 11) {
                 if (this.parentModule.mod instanceof GuiModule) {
                     this.parentModule.mod.setKey(54);
                 } else {
@@ -101,9 +136,5 @@ public class BindComponent implements Component {
     @Override
     public boolean isVisible() {
         return true;
-    }
-
-    private void renderText(String s, int color) {
-        Minecraft.getMinecraft().fontRendererObj.drawStringWithShadow(s, (float) ((this.parentModule.category.getX() + 4) * 2), (float) ((this.parentModule.category.getY() + this.offsetY + 3) * 2), color);
     }
 }

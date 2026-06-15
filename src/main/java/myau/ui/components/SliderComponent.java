@@ -1,4 +1,3 @@
-
 package myau.ui.components;
 
 import myau.Myau;
@@ -11,6 +10,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import org.lwjgl.opengl.GL11;
 
+import java.awt.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,16 +35,34 @@ public class SliderComponent implements Component {
     }
 
     public void draw(AtomicInteger offset) {
-        Gui.drawRect(this.parentModule.category.getX() + 4, this.parentModule.category.getY() + this.offsetY + 11, this.parentModule.category.getX() + 4 + this.parentModule.category.getWidth() - 8, this.parentModule.category.getY() + this.offsetY + 15, -12302777);
-        int sliderStart = this.parentModule.category.getX() + 4;
-        int sliderEnd = this.parentModule.category.getX() + 4 + (int) this.sliderWidth;
-        if (sliderEnd - sliderStart > 84) {
-            sliderEnd = sliderStart + 84;
+        int sx = this.parentModule.category.getX() + 4;
+        int sy = this.parentModule.category.getY() + this.offsetY + 11;
+        int sw = this.parentModule.category.getWidth() - 8;
+
+        int bgColor = ClickGui.isModern() ? new Color(40, 40, 50).getRGB() : -12302777;
+
+        Gui.drawRect(sx, sy, sx + sw, sy + 4, bgColor);
+
+        int sliderStart = sx;
+        int sliderEnd = sx + (int) this.sliderWidth;
+        if (sliderEnd - sliderStart > sw) {
+            sliderEnd = sliderStart + sw;
         }
-        Gui.drawRect(sliderStart, this.parentModule.category.getY() + this.offsetY + 11, sliderEnd, this.parentModule.category.getY() + this.offsetY + 15, ((HUD) Myau.moduleManager.modules.get(HUD.class)).getColor(System.currentTimeMillis(), offset.get()).getRGB());
+        int fillColor = ((HUD) Myau.moduleManager.modules.get(HUD.class)).getColor(System.currentTimeMillis(), offset.get()).getRGB();
+        Gui.drawRect(sliderStart, sy, sliderEnd, sy + 4, fillColor);
+
+        if (ClickGui.isModern() && sliderEnd > sliderStart) {
+            Gui.drawRect(sliderEnd - 1, sy - 1, sliderEnd + 1, sy + 5, new Color(255, 255, 255, 150).getRGB());
+        }
+
         GL11.glPushMatrix();
         GL11.glScaled(0.5D, 0.5D, 0.5D);
-        Minecraft.getMinecraft().fontRendererObj.drawStringWithShadow(this.slider.getName() + ": " + this.slider.getValueColorString(), (float) ((int) ((float) (this.parentModule.category.getX() + 4) * 2.0F)), (float) ((int) ((float) (this.parentModule.category.getY() + this.offsetY + 3) * 2.0F)), -1);
+        Minecraft.getMinecraft().fontRendererObj.drawStringWithShadow(
+                this.slider.getName() + ": " + this.slider.getValueColorString(),
+                (float) ((int) ((float) sx * 2.0F)),
+                (float) ((int) ((float) (this.parentModule.category.getY() + this.offsetY + 3) * 2.0F)),
+                -1
+        );
         GL11.glPopMatrix();
     }
 
@@ -93,7 +111,6 @@ public class SliderComponent implements Component {
         }
     }
 
-
     private static double roundToPrecision(double v, int precision) {
         if (precision < 0) {
             return 0.0D;
@@ -127,7 +144,6 @@ public class SliderComponent implements Component {
                 this.slider.stepping(true);
             }
         }
-
     }
 
     public void mouseReleased(int x, int y, int button) {
@@ -152,7 +168,6 @@ public class SliderComponent implements Component {
     public boolean isRightHalfHovered(int x, int y) {
         return x > this.x + this.parentModule.category.getWidth() / 2 && x < this.x + this.parentModule.category.getWidth() && y > this.y + 8 && y < this.y + 16;
     }
-
 
     @Override
     public boolean isVisible() {

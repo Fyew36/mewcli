@@ -48,6 +48,7 @@ public class HUD extends Module {
     public final BooleanProperty suffixes = new BooleanProperty("suffixes", true);
     public final BooleanProperty lowerCase = new BooleanProperty("lower-case", false);
     public final BooleanProperty chatOutline = new BooleanProperty("chat-outline", true);
+    public final ModeProperty guiTheme = new ModeProperty("gui-theme", 0, new String[]{"CLASSIC", "MODERN"});
     public final BooleanProperty blinkTimer = new BooleanProperty("blink-timer", true);
     public final BooleanProperty toggleSound = new BooleanProperty("toggle-sounds", true);
     public final BooleanProperty toggleAlerts = new BooleanProperty("toggle-alerts", false);
