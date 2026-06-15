@@ -60,6 +60,9 @@ public class GuiAccountManager extends GuiScreen {
         buttonList.add(new GuiButton(
                 4, width / 2 + 50, height - 52, 95, 20, "Session"
         ));
+        buttonList.add(new GuiButton(
+                6, width / 2 + 150, height - 52, 95, 20, "Cracked"
+        ));
 
         buttonList.add(deleteButton = new GuiButton(
                 2, width / 2 - 150, height - 28, 95, 20, "Delete"
@@ -296,6 +299,10 @@ public class GuiAccountManager extends GuiScreen {
                 break;
                 case 5:{
                     mc.displayGuiScreen(new GuiAddToken(this));
+                }
+                break;
+                case 6:{
+                    mc.displayGuiScreen(new GuiCrackedLogin(this));
                 }
                 break;
                 default: {
