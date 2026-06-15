@@ -9,6 +9,7 @@ import myau.events.*;
 import myau.mixin.IAccessorEntity;
 import myau.module.Module;
 import myau.property.properties.BooleanProperty;
+import myau.property.properties.FloatProperty;
 import myau.property.properties.IntProperty;
 import myau.property.properties.ModeProperty;
 import myau.property.properties.PercentProperty;
@@ -34,15 +35,23 @@ public class Velocity extends Module {
 
     private boolean shouldJump = false;
     private int jumpCooldown = 0;
+    private boolean hasReceivedVelocity = false;
+    private int legitSmartJumpCount = 0;
+    private int intaveTick = 0;
+    private int intaveDamageTick = 0;
 
-    public final ModeProperty mode = new ModeProperty("mode", 0, new String[]{"VANILLA", "JUMP", "DELAY", "REVERSE", "LEGIT_TEST"});
+    public final ModeProperty mode = new ModeProperty("mode", 0, new String[]{"VANILLA", "JUMP", "DELAY", "REVERSE", "LEGIT_TEST", "LEGIT_SMART", "INTAVE_REDUCE", "GRIM_REDUCE"});
     public final IntProperty delayTicks = new IntProperty("delay-ticks", 3, 1, 20, () -> this.mode.getValue() == 2);
     public final PercentProperty delayChance = new PercentProperty("delay-chance", 100, () -> this.mode.getValue() == 2);
+    public final IntProperty legitSmartJumpLimit = new IntProperty("legit-smart-jump-limit", 2, 1, 5, () -> this.mode.getValue() == 5);
+    public final FloatProperty intaveReduceFactor = new FloatProperty("intave-reduce-factor", 0.6F, 0.6F, 1.0F, () -> this.mode.getValue() == 6);
+    public final IntProperty intaveReduceHurtTime = new IntProperty("intave-reduce-hurt-time", 9, 1, 10, () -> this.mode.getValue() == 6);
     public final PercentProperty chance = new PercentProperty("chance", 100);
     public final PercentProperty horizontal = new PercentProperty("horizontal", 0);
     public final PercentProperty vertical = new PercentProperty("vertical", 100);
     public final PercentProperty explosionHorizontal = new PercentProperty("explosions-horizontal", 100);
     public final PercentProperty explosionVertical = new PercentProperty("explosions-vertical", 100);
+    public final IntProperty grimReduceJumpLimit = new IntProperty("grim-reduce-jump-limit", 2, 1, 5, () -> this.mode.getValue() == 7);
     public final BooleanProperty fakeCheck = new BooleanProperty("fake-check", true);
     public final BooleanProperty debugLog = new BooleanProperty("debug-log", false);
 
@@ -84,7 +93,11 @@ public class Velocity extends Module {
                 this.chanceCounter = this.chanceCounter % 100 + this.chance.getValue();
                 if (this.chanceCounter >= 100) {
                     this.jumpFlag = (this.mode.getValue() == 1 || this.mode.getValue() == 2) && event.getY() > 0.0;
-                    this.delayActive = this.mode.getValue() == 3;
+                    this.delayActive = this.mode.getValue() == 2;
+                    if (this.mode.getValue() == 7) {
+                        this.hasReceivedVelocity = true;
+                        return;
+                    }
                     if (this.horizontal.getValue() > 0) {
                         event.setX(event.getX() * (double) this.horizontal.getValue() / 100.0);
                         event.setZ(event.getZ() * (double) this.horizontal.getValue() / 100.0);
@@ -141,6 +154,51 @@ public class Velocity extends Module {
                     jumpCooldown--;
                 }
             }
+            if (this.mode.getValue() == 5 && this.hasReceivedVelocity) {
+                if (mc.thePlayer.onGround && mc.thePlayer.hurtTime == 9 && mc.thePlayer.isSprinting() && mc.currentScreen == null) {
+                    if (this.legitSmartJumpCount > this.legitSmartJumpLimit.getValue()) {
+                        this.legitSmartJumpCount = 0;
+                    } else {
+                        this.legitSmartJumpCount++;
+                        if (mc.thePlayer.ticksExisted % 5 != 0) {
+                            mc.thePlayer.jump();
+                        }
+                    }
+                } else if (mc.thePlayer.hurtTime == 8) {
+                    this.hasReceivedVelocity = false;
+                    this.legitSmartJumpCount = 0;
+                }
+            }
+            if (this.mode.getValue() == 6 && this.hasReceivedVelocity) {
+                this.intaveTick++;
+                if (mc.thePlayer.hurtTime == 2) {
+                    this.intaveDamageTick++;
+                    if (mc.thePlayer.onGround && this.intaveTick % 2 == 0 && this.intaveDamageTick <= 10) {
+                        mc.thePlayer.jump();
+                        this.intaveTick = 0;
+                    }
+                    this.hasReceivedVelocity = false;
+                }
+            }
+            if (this.mode.getValue() == 7 && this.hasReceivedVelocity) {
+                if (mc.thePlayer.onGround
+                        && mc.thePlayer.hurtTime >= 8
+                        && mc.thePlayer.isSprinting()
+                        && mc.currentScreen == null
+                        && !mc.thePlayer.isPotionActive(Potion.jump)
+                        && !this.isInLiquidOrWeb()) {
+                    if (this.legitSmartJumpCount >= this.grimReduceJumpLimit.getValue()) {
+                        this.legitSmartJumpCount = 0;
+                        this.hasReceivedVelocity = false;
+                    } else {
+                        this.legitSmartJumpCount++;
+                        mc.thePlayer.movementInput.jump = true;
+                    }
+                } else if (mc.thePlayer.hurtTime <= 1) {
+                    this.hasReceivedVelocity = false;
+                    this.legitSmartJumpCount = 0;
+                }
+            }
         }
     }
 
@@ -176,6 +234,9 @@ public class Velocity extends Module {
                             this.reverseFlag = true;
                             return;
                         }
+                    }
+                    if (this.mode.getValue() == 5 || this.mode.getValue() == 6 || this.mode.getValue() == 7) {
+                        this.hasReceivedVelocity = true;
                     }
                     if (this.debugLog.getValue()) {
                         ChatUtil.sendFormatted(
@@ -233,6 +294,10 @@ public class Velocity extends Module {
         this.allowNext = true;
         this.shouldJump = false;
         this.jumpCooldown = 0;
+        this.hasReceivedVelocity = false;
+        this.legitSmartJumpCount = 0;
+        this.intaveTick = 0;
+        this.intaveDamageTick = 0;
     }
 
     @Override
