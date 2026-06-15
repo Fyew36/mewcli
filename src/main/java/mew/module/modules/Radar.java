@@ -38,6 +38,9 @@ public class Radar extends Module {
         super("Radar", false);
     }
 
+    @Override
+    public String getCategory() { return "Render"; }
+
     private boolean shouldRender(EntityPlayer entityPlayer) {
         if (entityPlayer.deathTime > 0) {
             return false;

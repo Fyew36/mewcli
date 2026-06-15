@@ -7,6 +7,9 @@ public class AntiObfuscate extends Module {
         super("AntiObfuscate", false, true);
     }
 
+    @Override
+    public String getCategory() { return "Render"; }
+
     public String stripObfuscated(String input) {
         if (input == null) {
             return null;

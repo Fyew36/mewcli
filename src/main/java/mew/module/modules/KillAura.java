@@ -379,6 +379,9 @@ public class KillAura extends Module {
         this.extraDynamicCPS = (float)(this.minCPS.getValue() + this.maxCPS.getValue()) / 2.0F;
     }
 
+    @Override
+    public String getCategory() { return "Combat"; }
+
     public EntityLivingBase getTarget() {
         return this.target != null ? this.target.getEntity() : null;
     }

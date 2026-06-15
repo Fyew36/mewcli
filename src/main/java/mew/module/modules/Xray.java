@@ -149,6 +149,9 @@ public class Xray extends Module {
         super("Xray", false);
     }
 
+    @Override
+    public String getCategory() { return "Render"; }
+
     public boolean shouldRenderSide(int blockId) {
         return xrayBlocks.contains(blockId);
     }

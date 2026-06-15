@@ -73,6 +73,9 @@ public class AutoHeal extends Module {
         super("AutoHeal", false);
     }
 
+    @Override
+    public String getCategory() { return "Player"; }
+
     public boolean isSwitching() {
         return this.prevSlot != -1;
     }

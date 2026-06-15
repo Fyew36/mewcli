@@ -69,6 +69,9 @@ public class AutoBlockIn extends Module {
     }
 
     @Override
+    public String getCategory() { return "Combat"; }
+
+    @Override
     public void onEnabled() {
         if (mc.thePlayer != null) {
             serverYaw = mc.thePlayer.rotationYaw;

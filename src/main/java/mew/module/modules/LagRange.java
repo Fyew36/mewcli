@@ -81,6 +81,9 @@ public class LagRange extends Module {
         super("LagRange", false);
     }
 
+    @Override
+    public String getCategory() { return "Combat"; }
+
     @EventTarget(Priority.LOW)
     public void onTick(TickEvent event) {
         if (this.isEnabled()) {

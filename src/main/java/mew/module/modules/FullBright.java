@@ -19,6 +19,9 @@ public class FullBright extends Module {
         super("Fullbright", true, true);
     }
 
+    @Override
+    public String getCategory() { return "Render"; }
+
     @EventTarget
     public void onTick(TickEvent event) {
         if (this.isEnabled() && event.getType() == EventType.POST) {

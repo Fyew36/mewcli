@@ -107,6 +107,9 @@ public class ItemESP extends Module {
         super("ItemESP", false);
     }
 
+    @Override
+    public String getCategory() { return "Render"; }
+
     @EventTarget
     public void onRender(Render3DEvent event) {
         if (this.isEnabled()) {

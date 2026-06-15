@@ -16,6 +16,9 @@ public class MCF extends Module {
         super("MCF", false, true);
     }
 
+    @Override
+    public String getCategory() { return "Player"; }
+
     @EventTarget
     public void onKey(KeyEvent event) {
         if (this.isEnabled() && event.getKey() == -98) {

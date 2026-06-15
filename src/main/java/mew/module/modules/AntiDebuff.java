@@ -10,4 +10,7 @@ public class AntiDebuff extends Module {
     public AntiDebuff() {
         super("AntiDebuff", false);
     }
+
+    @Override
+    public String getCategory() { return "Combat"; }
 }

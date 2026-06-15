@@ -19,6 +19,9 @@ public class Blink extends Module {
         super("Blink", false);
     }
 
+    @Override
+    public String getCategory() { return "Player"; }
+
     @EventTarget(Priority.LOWEST)
     public void onTick(TickEvent event) {
         if (this.isEnabled() && event.getType() == EventType.POST) {

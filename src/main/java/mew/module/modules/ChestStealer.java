@@ -88,6 +88,9 @@ public class ChestStealer extends Module {
         super("ChestStealer", false);
     }
 
+    @Override
+    public String getCategory() { return "Player"; }
+
     @EventTarget
     public void onUpdate(UpdateEvent event) {
         if (event.getType() == EventType.PRE) {

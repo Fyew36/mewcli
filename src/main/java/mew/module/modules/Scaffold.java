@@ -245,6 +245,9 @@ public class Scaffold extends Module {
         super("Scaffold", false);
     }
 
+    @Override
+    public String getCategory() { return "Movement"; }
+
     public int getSlot() {
         return this.lastSlot;
     }
@@ -324,15 +327,20 @@ public class Scaffold extends Module {
                             }
                             break;
                         case 4:
-                            this.yaw = RotationUtil.quantizeAngle(yawDiffTo180);
-                            this.pitch = RotationUtil.quantizeAngle(90.0F);
+                            this.yaw = RotationUtil.quantizeAngle(yawDiffTo180 + RandomUtil.nextFloat(-0.3F, 0.3F));
+                            this.pitch = RotationUtil.quantizeAngle(RandomUtil.nextFloat(88.5F, 90.5F));
                             break;
                         case 5:
                             if (this.yaw == -180.0F && this.pitch == 0.0F) {
-                                this.yaw = RotationUtil.quantizeAngle(diagonalYaw);
-                                this.pitch = RotationUtil.quantizeAngle(85.0F);
+                                float startYaw = diagonalYaw + RandomUtil.nextFloat(-1.0F, 1.0F);
+                                float startPitch = RandomUtil.nextFloat(82.0F, 87.0F);
+                                this.yaw = RotationUtil.quantizeAngle(startYaw);
+                                this.pitch = RotationUtil.quantizeAngle(startPitch);
+                                this.smoothYaw = this.yaw;
+                                this.smoothPitch = this.pitch;
                             } else {
-                                this.yaw = RotationUtil.quantizeAngle(diagonalYaw);
+                                float offset = RandomUtil.nextFloat(-0.3F, 0.3F);
+                                this.yaw = RotationUtil.quantizeAngle(diagonalYaw + offset);
                             }
                     }
                 }
@@ -403,19 +411,20 @@ public class Scaffold extends Module {
                             this.yaw = RotationUtil.quantizeAngle(diagonalYaw);
                             break;
                         case 4:
-                            this.yaw = RotationUtil.quantizeAngle(yawDiffTo180);
+                            this.yaw = RotationUtil.quantizeAngle(yawDiffTo180 + RandomUtil.nextFloat(-0.3F, 0.3F));
                     }
                 }
                 if (this.rotationMode.getValue() != 0) {
                     float targetYaw = this.yaw;
                     float targetPitch = this.pitch;
                     if (this.rotationMode.getValue() == 5) {
+                        float smoothFactor = RandomUtil.nextFloat(0.12F, 0.28F);
                         float dy = MathHelper.wrapAngleTo180_float(targetYaw - this.smoothYaw);
                         float dp = targetPitch - this.smoothPitch;
-                        this.smoothYaw += dy * 0.2F;
-                        this.smoothPitch += dp * 0.2F;
-                        targetYaw = RotationUtil.quantizeAngle(this.smoothYaw);
-                        targetPitch = RotationUtil.quantizeAngle(this.smoothPitch);
+                        this.smoothYaw += dy * smoothFactor + RandomUtil.nextFloat(-0.05F, 0.05F);
+                        this.smoothPitch += dp * smoothFactor + RandomUtil.nextFloat(-0.05F, 0.05F);
+                        targetYaw = RotationUtil.quantizeAngle(this.smoothYaw + RandomUtil.nextFloat(-0.1F, 0.1F));
+                        targetPitch = RotationUtil.quantizeAngle(this.smoothPitch + RandomUtil.nextFloat(-0.1F, 0.1F));
                     }
                     if (this.towering && (mc.thePlayer.motionY > 0.0 || mc.thePlayer.posY > (double) (this.startY + 1))) {
                         float yawDiff = MathHelper.wrapAngleTo180_float(this.yaw - event.getYaw());

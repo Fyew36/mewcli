@@ -32,6 +32,9 @@ public class Speed extends Module {
         super("Speed", false);
     }
 
+    @Override
+    public String getCategory() { return "Movement"; }
+
     @EventTarget(Priority.LOW)
     public void onStrafe(StrafeEvent event) {
         if (this.isEnabled() && this.canBoost()) {

@@ -33,6 +33,9 @@ public class ChestESP extends Module {
         super("ChestESP", false);
     }
 
+    @Override
+    public String getCategory() { return "Render"; }
+
     @EventTarget
     public void onRender(Render3DEvent event) {
         if (this.isEnabled()) {

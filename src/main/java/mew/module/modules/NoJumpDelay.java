@@ -17,6 +17,9 @@ public class NoJumpDelay extends Module {
         super("NoJumpDelay", false);
     }
 
+    @Override
+    public String getCategory() { return "Misc"; }
+
     @EventTarget(Priority.HIGHEST)
     public void onTick(TickEvent event) {
         if (this.isEnabled() && event.getType() == EventType.PRE) {

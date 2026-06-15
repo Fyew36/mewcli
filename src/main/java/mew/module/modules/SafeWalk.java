@@ -43,6 +43,9 @@ public class SafeWalk extends Module {
         super("SafeWalk", false);
     }
 
+    @Override
+    public String getCategory() { return "Movement"; }
+
     @EventTarget
     public void onMove(SafeWalkEvent event) {
         if (this.isEnabled()) {

@@ -129,6 +129,9 @@ public class BedTracker extends Module {
         this.hudShadow = new BooleanProperty("hud-shadow", true, this.hud::getValue);
     }
 
+    @Override
+    public String getCategory() { return "Minigames"; }
+
     @EventTarget
     public void onTick(TickEvent event) {
         if (this.isEnabled() && event.getType() == EventType.POST && this.isBed(this.bedPos)) {

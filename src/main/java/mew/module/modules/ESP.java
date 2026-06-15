@@ -89,6 +89,9 @@ public class ESP extends Module {
         super("ESP", false);
     }
 
+    @Override
+    public String getCategory() { return "Render"; }
+
     public boolean isOutlineEnabled() {
         return this.outline;
     }

@@ -69,6 +69,9 @@ public class NameTags extends Module {
         super("NameTags", false);
     }
 
+    @Override
+    public String getCategory() { return "Render"; }
+
     public boolean shouldRenderTags(EntityLivingBase entityLivingBase) {
         if (entityLivingBase.deathTime > 0) {
             return false;

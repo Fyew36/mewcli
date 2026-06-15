@@ -15,6 +15,9 @@ public class GhostHand extends Module {
         super("GhostHand", false);
     }
 
+    @Override
+    public String getCategory() { return "Player"; }
+
     public boolean shouldSkip(Entity entity) {
         return entity instanceof EntityPlayer
                 && !TeamUtil.isBot((EntityPlayer) entity)

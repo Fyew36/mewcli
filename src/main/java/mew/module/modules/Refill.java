@@ -25,6 +25,9 @@ public class Refill extends Module {
         super("Refill", false);
     }
 
+    @Override
+    public String getCategory() { return "Player"; }
+
     @EventTarget
     public void onUpdate(TickEvent event) {
         if (this.isEnabled() && mc.thePlayer != null && event.getType() == EventType.PRE) {

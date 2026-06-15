@@ -75,6 +75,9 @@ public class InvManager extends Module {
         super("InvManager", false);
     }
 
+    @Override
+    public String getCategory() { return "Player"; }
+
     @EventTarget
     public void onUpdate(UpdateEvent event) {
         if (event.getType() == EventType.PRE) {

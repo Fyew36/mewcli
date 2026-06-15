@@ -43,6 +43,9 @@ public class Freeze extends Module {
         super("Freeze", false);
     }
 
+    @Override
+    public String getCategory() { return "Player"; }
+
     @EventTarget(Priority.HIGHEST)
     public void onPacket(PacketEvent event) {
         if (!this.isEnabled() || event.getType() != EventType.RECEIVE || event.isCancelled()) {

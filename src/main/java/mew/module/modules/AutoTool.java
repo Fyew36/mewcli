@@ -26,6 +26,9 @@ public class AutoTool extends Module {
         super("AutoTool", false);
     }
 
+    @Override
+    public String getCategory() { return "Player"; }
+
     public boolean isKillAura() {
         KillAura killAura = (KillAura) Mew.moduleManager.modules.get(KillAura.class);
         if (!killAura.isEnabled()) return false;

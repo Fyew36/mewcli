@@ -34,6 +34,9 @@ public class Wtap extends Module {
         super("WTap", false);
     }
 
+    @Override
+    public String getCategory() { return "Combat"; }
+
     @EventTarget(Priority.LOWEST)
     public void onMoveInput(MoveInputEvent event) {
         if (this.active) {

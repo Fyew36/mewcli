@@ -15,6 +15,9 @@ public class KeepSprint extends Module {
         super("KeepSprint", false);
     }
 
+    @Override
+    public String getCategory() { return "Combat"; }
+
     public boolean shouldKeepSprint() {
         if (this.groundOnly.getValue() && !mc.thePlayer.onGround) {
             return false;

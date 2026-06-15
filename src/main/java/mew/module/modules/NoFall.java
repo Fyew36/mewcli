@@ -39,6 +39,9 @@ public class NoFall extends Module {
         super("NoFall", false);
     }
 
+    @Override
+    public String getCategory() { return "Movement"; }
+
     @EventTarget(Priority.HIGH)
     public void onPacket(PacketEvent event) {
         if (event.getType() == EventType.RECEIVE && event.getPacket() instanceof S08PacketPlayerPosLook) {

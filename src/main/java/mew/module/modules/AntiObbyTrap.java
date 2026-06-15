@@ -17,6 +17,9 @@ public class AntiObbyTrap extends Module {
         super("AntiObbyTrap", false);
     }
 
+    @Override
+    public String getCategory() { return "Combat"; }
+
     public boolean isInsideBlock(World world, BlockPos blockPos) {
         IBlockState blockState = world.getBlockState(blockPos);
         Block block = blockState.getBlock();

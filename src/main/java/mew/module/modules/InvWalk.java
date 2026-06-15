@@ -60,6 +60,9 @@ public class InvWalk extends Module {
         super("InvWalk", false);
     }
 
+    @Override
+    public String getCategory() { return "Movement"; }
+
     public void pressMovementKeys(boolean skipSneak) {
         this.movementKeys.keySet().stream()
                 .filter(key -> !skipSneak || key != mc.gameSettings.keyBindSneak)

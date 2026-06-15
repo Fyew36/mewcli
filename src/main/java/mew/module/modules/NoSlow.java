@@ -38,6 +38,9 @@ public class NoSlow extends Module {
         super("NoSlow", false);
     }
 
+    @Override
+    public String getCategory() { return "Combat"; }
+
     public boolean isSwordActive() {
         return this.swordMode.getValue() != 0 && ItemUtil.isHoldingSword();
     }

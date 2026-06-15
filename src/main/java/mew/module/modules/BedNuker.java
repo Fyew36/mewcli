@@ -319,6 +319,9 @@ public class BedNuker extends Module {
         super("BedNuker", false);
     }
 
+    @Override
+    public String getCategory() { return "Minigames"; }
+
     public boolean isReady() {
         return this.targetBed != null && this.readyToBreak;
     }

@@ -68,6 +68,9 @@ public class Chams extends Module {
         super("Chams", false);
     }
 
+    @Override
+    public String getCategory() { return "Render"; }
+
     @EventTarget
     public void onRenderLiving(RenderLivingEvent event) {
         if (this.isEnabled()) {

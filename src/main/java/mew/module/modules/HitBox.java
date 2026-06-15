@@ -52,6 +52,9 @@ public class HitBox extends Module {
         super("HitBox", false);
     }
 
+    @Override
+    public String getCategory() { return "Combat"; }
+
     public static float getExpansion(Entity entity) {
         HitBox hitBox = (HitBox) Mew.moduleManager.modules.get(HitBox.class);
         if (hitBox != null && hitBox.isEnabled() && entity instanceof EntityLivingBase) {

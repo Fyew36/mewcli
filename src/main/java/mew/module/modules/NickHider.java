@@ -18,6 +18,9 @@ public class NickHider extends Module {
         super("NickHider", false, true);
     }
 
+    @Override
+    public String getCategory() { return "Player"; }
+
     public String replaceNick(String input) {
         if (input != null && mc.thePlayer != null) {
             if (this.scoreboard.getValue() && input.matches("§7\\d{2}/\\d{2}/\\d{2}(?:\\d{2})?  ?§8.*")) {

@@ -27,6 +27,9 @@ public class MoreKB extends Module {
         this.target = null;
     }
 
+    @Override
+    public String getCategory() { return "Combat"; }
+
     @EventTarget
     public void onAttack(AttackEvent event) {
         if (!this.isEnabled()) {

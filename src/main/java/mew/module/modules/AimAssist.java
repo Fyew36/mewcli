@@ -69,6 +69,9 @@ public class AimAssist extends Module {
         super("AimAssist", false);
     }
 
+    @Override
+    public String getCategory() { return "Combat"; }
+
     @EventTarget
     public void onTick(TickEvent event) {
         if (this.isEnabled() && event.getType() == EventType.POST && mc.currentScreen == null) {

@@ -81,6 +81,9 @@ public class Tracers extends Module {
         super("Tracers", false);
     }
 
+    @Override
+    public String getCategory() { return "Render"; }
+
     @EventTarget
     public void onRender3D(Render3DEvent event) {
         if (this.isEnabled() && this.drawLines.getValue()) {

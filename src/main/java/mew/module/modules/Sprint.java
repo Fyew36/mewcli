@@ -19,6 +19,9 @@ public class Sprint extends Module {
         super("Sprint", true, true);
     }
 
+    @Override
+    public String getCategory() { return "Movement"; }
+
     public boolean shouldApplyFovFix(IAttributeInstance attribute) {
         if (!this.foxFix.getValue()) {
             return false;

@@ -17,6 +17,9 @@ public class GuiModule extends Module {
     }
 
     @Override
+    public String getCategory() { return "Misc"; }
+
+    @Override
     public void onEnabled() {
         setEnabled(false);
         if(clickGui == null){

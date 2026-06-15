@@ -20,6 +20,9 @@ public class InventoryClicker extends Module {
     }
 
     @Override
+    public String getCategory() { return "Player"; }
+
+    @Override
     public String[] getSuffix() {
         return new String[]{triggerTicks.getValue().toString() + " ticks"};
     }

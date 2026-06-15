@@ -58,6 +58,9 @@ public class LongJump extends Module {
         super("LongJump", false);
     }
 
+    @Override
+    public String getCategory() { return "Movement"; }
+
     public boolean isAutoMode() {
         return this.mode.getValue() == 0 || this.mode.getValue() == 2 || this.mode.getValue() == 3;
     }

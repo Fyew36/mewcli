@@ -11,6 +11,9 @@ public class ViewClip extends Module {
     }
 
     @Override
+    public String getCategory() { return "Movement"; }
+
+    @Override
     public void onEnabled() {
         if (mc.theWorld != null) {
             mc.renderGlobal.loadRenderers();

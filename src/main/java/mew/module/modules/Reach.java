@@ -25,6 +25,9 @@ public class Reach extends Module {
         super("Reach", false);
     }
 
+    @Override
+    public String getCategory() { return "Combat"; }
+
     @EventTarget
     public void onPick(PickEvent event) {
         if (this.isEnabled() && this.expanding) {

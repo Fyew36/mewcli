@@ -40,6 +40,9 @@ public class AntiVoid extends Module {
         super("AntiVoid", false);
     }
 
+    @Override
+    public String getCategory() { return "Player"; }
+
     @EventTarget(Priority.LOWEST)
     public void onUpdate(PlayerUpdateEvent event) {
         if (this.isEnabled()) {

@@ -20,6 +20,9 @@ public class Fly extends Module {
         super("Fly", false);
     }
 
+    @Override
+    public String getCategory() { return "Movement"; }
+
     @EventTarget
     public void onStrafe(StrafeEvent event) {
         if (this.isEnabled()) {

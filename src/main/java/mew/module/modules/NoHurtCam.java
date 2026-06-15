@@ -9,4 +9,7 @@ public class NoHurtCam extends Module {
     public NoHurtCam() {
         super("NoHurtCam", false, true);
     }
+
+    @Override
+    public String getCategory() { return "Render"; }
 }

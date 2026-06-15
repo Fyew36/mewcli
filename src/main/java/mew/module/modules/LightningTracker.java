@@ -40,6 +40,9 @@ public class LightningTracker extends Module {
         super("LightningTracker", false, true);
     }
 
+    @Override
+    public String getCategory() { return "Minigames"; }
+
     @EventTarget
     public void onPacket(PacketEvent event) {
         if (this.isEnabled() && event.getType() == EventType.RECEIVE && event.getPacket() instanceof S2CPacketSpawnGlobalEntity) {

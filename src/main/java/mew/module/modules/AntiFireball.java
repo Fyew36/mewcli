@@ -52,6 +52,9 @@ public class AntiFireball extends Module {
         super("AntiFireball", false);
     }
 
+    @Override
+    public String getCategory() { return "Combat"; }
+
     @EventTarget
     public void onTick(TickEvent event) {
         if (this.isEnabled() && event.getType() == EventType.PRE) {

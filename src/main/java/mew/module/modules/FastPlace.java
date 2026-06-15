@@ -66,6 +66,9 @@ public class FastPlace extends Module {
         super("FastPlace", false);
     }
 
+    @Override
+    public String getCategory() { return "Player"; }
+
     @EventTarget
     public void onTick(TickEvent event) {
         if (this.isEnabled() && event.getType() == EventType.PRE) {

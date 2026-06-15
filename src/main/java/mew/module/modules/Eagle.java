@@ -51,6 +51,9 @@ public class Eagle extends Module {
         super("Eagle", false);
     }
 
+    @Override
+    public String getCategory() { return "Movement"; }
+
     @EventTarget(Priority.LOWEST)
     public void onTick(TickEvent event) {
         if (this.isEnabled() && event.getType() == EventType.PRE) {

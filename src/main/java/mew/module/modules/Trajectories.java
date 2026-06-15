@@ -33,6 +33,9 @@ public class Trajectories extends Module {
         super("Trajectories", false, true);
     }
 
+    @Override
+    public String getCategory() { return "Render"; }
+
     @EventTarget
     public void onRender3D(Render3DEvent event) {
         if (this.isEnabled() && mc.thePlayer.getHeldItem() != null && mc.gameSettings.thirdPersonView == 0) {

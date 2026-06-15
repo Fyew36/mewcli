@@ -19,6 +19,9 @@ public class Jesus extends Module {
     }
 
     @Override
+    public String getCategory() { return "Movement"; }
+
+    @Override
     public String[] getSuffix() {
         return new String[]{df.format(this.speed.getValue())};
     }

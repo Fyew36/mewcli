@@ -67,6 +67,9 @@ public class BedESP extends Module {
         this.obsidian = new BooleanProperty("obsidian", true);
     }
 
+    @Override
+    public String getCategory() { return "Render"; }
+
     public double getHeight() {
         return this.mode.getValue() == 1 ? 1.0 : 0.5625;
     }

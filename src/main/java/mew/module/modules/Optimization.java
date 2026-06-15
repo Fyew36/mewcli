@@ -12,4 +12,7 @@ public class Optimization extends Module {
     public Optimization() {
         super("Optimization", false);
     }
+
+    @Override
+    public String getCategory() { return "Misc"; }
 }

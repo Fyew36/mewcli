@@ -21,6 +21,9 @@ public class Spammer extends Module {
         super("Spammer", false);
     }
 
+    @Override
+    public String getCategory() { return "Player"; }
+
     @EventTarget
     public void onRender(Render2DEvent event) {
         if (this.isEnabled()) {

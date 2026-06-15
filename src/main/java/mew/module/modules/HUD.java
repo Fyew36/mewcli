@@ -97,6 +97,9 @@ public class HUD extends Module {
         super("HUD", true, true);
     }
 
+    @Override
+    public String getCategory() { return "Render"; }
+
     public Color getColor(long time) {
         return this.getColor(time, 0L);
     }

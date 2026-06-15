@@ -90,6 +90,9 @@ public class Indicators extends Module {
         super("Indicators", false, true);
     }
 
+    @Override
+    public String getCategory() { return "Render"; }
+
     @EventTarget
     public void onRender(Render2DEvent render2DEvent) {
         if (!this.isEnabled()) {

@@ -22,6 +22,9 @@ public class NoRotate extends Module {
         super("NoRotate", false);
     }
 
+    @Override
+    public String getCategory() { return "Player"; }
+
     @EventTarget
     public void onPacket(PacketEvent event) {
         if (this.isEnabled() && event.getType() == EventType.RECEIVE && !event.isCancelled() && mc.thePlayer != null && mc.theWorld != null) {

@@ -32,6 +32,9 @@ public class HitSelect extends Module {
         super("HitSelect", false);
     }
 
+    @Override
+    public String getCategory() { return "Combat"; }
+
     @EventTarget
     public void onUpdate(UpdateEvent event) {
         if (!this.isEnabled()) {

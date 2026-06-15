@@ -32,6 +32,9 @@ public class AutoAnduril extends Module {
         super("AutoAnduril", false);
     }
 
+    @Override
+    public String getCategory() { return "Combat"; }
+
     public boolean canSwap() {
         if (mc.objectMouseOver != null
                 && mc.objectMouseOver.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK

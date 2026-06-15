@@ -68,6 +68,9 @@ public class Velocity extends Module {
         super("Velocity", false);
     }
 
+    @Override
+    public String getCategory() { return "Combat"; }
+
     @EventTarget
     public void onKnockback(KnockbackEvent event) {
         if (!this.isEnabled() || event.isCancelled()) {

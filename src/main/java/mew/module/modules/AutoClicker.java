@@ -101,6 +101,9 @@ public class AutoClicker extends Module {
         super("AutoClicker", false);
     }
 
+    @Override
+    public String getCategory() { return "Combat"; }
+
     @EventTarget
     public void onTick(TickEvent event) {
         if (event.getType() == EventType.PRE) {

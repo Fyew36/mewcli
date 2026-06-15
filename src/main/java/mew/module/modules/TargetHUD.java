@@ -110,6 +110,9 @@ public class TargetHUD extends Module {
         super("TargetHUD", false, true);
     }
 
+    @Override
+    public String getCategory() { return "Render"; }
+
     @EventTarget
     public void onRender(Render2DEvent event) {
         if (this.isEnabled() && mc.thePlayer != null) {

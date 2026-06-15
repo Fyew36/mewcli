@@ -94,6 +94,9 @@ public class TargetStrafe extends Module {
         super("TargetStrafe", false);
     }
 
+    @Override
+    public String getCategory() { return "Combat"; }
+
     public float getTargetYaw() {
         return this.targetYaw;
     }
