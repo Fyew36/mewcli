@@ -23,15 +23,15 @@ public class CheckBoxComponent implements Component {
     public CheckBoxComponent(BooleanProperty property, ModuleComponent parentModule, int offsetY) {
         this.property = property;
         this.module = parentModule;
-        this.x = parentModule.category.getX() + parentModule.category.getWidth();
-        this.y = parentModule.category.getY() + parentModule.offsetY;
+        this.x = (int) (parentModule.category.getX() + parentModule.category.getWidth());
+        this.y = (int) (parentModule.category.getY() + parentModule.offsetY);
         this.offsetY = offsetY;
     }
 
     public void draw(AtomicInteger offset) {
         if (ClickGui.isModern()) {
-            int cx = this.module.category.getX() + 4;
-            int cy = this.module.category.getY() + this.offsetY + 2;
+            int cx = (int) (this.module.category.getX() + 4);
+            int cy = (int) (this.module.category.getY() + this.offsetY + 2);
             int toggleSize = 8;
 
             int bgColor = this.property.getValue()
@@ -76,8 +76,8 @@ public class CheckBoxComponent implements Component {
     }
 
     public void update(int mousePosX, int mousePosY) {
-        this.y = this.module.category.getY() + this.offsetY;
-        this.x = this.module.category.getX();
+        this.y = (int) (this.module.category.getY() + this.offsetY);
+        this.x = (int) (this.module.category.getX());
     }
 
     public void mouseDown(int x, int y, int button) {

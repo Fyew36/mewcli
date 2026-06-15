@@ -20,8 +20,8 @@ public class ModeComponent implements Component {
     public ModeComponent(ModeProperty desc, ModuleComponent parentModule, int offsetY) {
         this.property = desc;
         this.parentModule = parentModule;
-        this.x = parentModule.category.getX() + parentModule.category.getWidth();
-        this.y = parentModule.category.getY() + parentModule.offsetY;
+        this.x = (int) (parentModule.category.getX() + parentModule.category.getWidth());
+        this.y = (int) (parentModule.category.getY() + parentModule.offsetY);
         this.offsetY = offsetY;
     }
 
@@ -49,8 +49,8 @@ public class ModeComponent implements Component {
     }
 
     public void update(int mousePosX, int mousePosY) {
-        this.y = this.parentModule.category.getY() + this.offsetY;
-        this.x = this.parentModule.category.getX();
+        this.y = (int) (this.parentModule.category.getY() + this.offsetY);
+        this.x = (int) (this.parentModule.category.getX());
     }
 
     public void setComponentStartAt(int newOffsetY) {

@@ -23,8 +23,8 @@ public class TextComponent implements Component {
     public TextComponent(TextProperty property, ModuleComponent parentModule, int offsetY) {
         this.property = property;
         this.module = parentModule;
-        this.x = parentModule.category.getX() + parentModule.category.getWidth();
-        this.y = parentModule.category.getY() + parentModule.offsetY;
+        this.x = (int) (parentModule.category.getX() + parentModule.category.getWidth());
+        this.y = (int) (parentModule.category.getY() + parentModule.offsetY);
         this.offsetY = offsetY;
     }
 
@@ -46,8 +46,8 @@ public class TextComponent implements Component {
     }
 
     public void update(int mousePosX, int mousePosY) {
-        this.y = this.module.category.getY() + this.offsetY;
-        this.x = this.module.category.getX();
+        this.y = (int) (this.module.category.getY() + this.offsetY);
+        this.x = (int) (this.module.category.getX());
     }
 
     public void mouseDown(int x, int y, int button) {

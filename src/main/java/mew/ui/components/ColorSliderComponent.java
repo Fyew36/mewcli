@@ -33,9 +33,9 @@ public class ColorSliderComponent implements Component {
 
     @Override
     public void draw(java.util.concurrent.atomic.AtomicInteger offset) {
-        int x = parentModule.category.getX() + 4;
-        int y = parentModule.category.getY() + offsetY;
-        int width = parentModule.category.getWidth() - 8;
+        int x = (int) (parentModule.category.getX() + 4);
+        int y = (int) (parentModule.category.getY() + offsetY);
+        int width = (int) (parentModule.category.getWidth() - 8);
         GL11.glPushMatrix();
         GL11.glScaled(0.5, 0.5, 0.5);
         Minecraft.getMinecraft().fontRendererObj.drawStringWithShadow(property.getName().replace("-", " ") + ": " + ChatColors.formatColor(property.formatValue()), (float) (x * 2), (float) ((int) ((float) (this.parentModule.category.getY() + this.offsetY + 3) * 2.0F)), -1);
@@ -78,8 +78,8 @@ public class ColorSliderComponent implements Component {
 
     @Override
     public void update(int mouseX, int mouseY) {
-        int baseX = parentModule.category.getX() + 4;
-        int width = parentModule.category.getWidth() - 8;
+        int baseX = (int) (parentModule.category.getX() + 4);
+        int width = (int) (parentModule.category.getWidth() - 8);
         boolean changed = false;
 
         if (draggingHue) {
@@ -115,7 +115,7 @@ public class ColorSliderComponent implements Component {
     @Override
     public void mouseDown(int mouseX, int mouseY, int button) {
         if (button != 0 || !parentModule.panelExpand) return;
-        int baseY = parentModule.category.getY() + offsetY + 10;
+        int baseY = (int) (parentModule.category.getY() + offsetY + 10);
         if (isHovered(mouseX, mouseY, baseY)) draggingHue = true;
         else if (isHovered(mouseX, mouseY, baseY + 4 + 2)) draggingSat = true;
         else if (isHovered(mouseX, mouseY, baseY + (4 + 2) * 2)) draggingBri = true;
@@ -127,8 +127,8 @@ public class ColorSliderComponent implements Component {
     }
 
     private boolean isHovered(int mx, int my, int sliderY) {
-        int startX = parentModule.category.getX() + 4;
-        int endX = startX + parentModule.category.getWidth() - 8;
+        int startX = (int) (parentModule.category.getX() + 4);
+        int endX = startX + (int) (parentModule.category.getWidth() - 8);
         return mx >= startX && mx <= endX && my >= sliderY && my <= sliderY + 4;
     }
 
