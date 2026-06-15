@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ModeComponent implements Component {
     private final ModeProperty property;
