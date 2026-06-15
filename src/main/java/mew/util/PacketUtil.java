@@ -16,6 +16,6 @@ public class PacketUtil {
     }
 
     public static void handlePacket(Packet<INetHandlerPlayClient> packet) {
-        packet.processPacket(mc.getNetHandler().getClientPlayHandler());
+        packet.processPacket(mc.getNetHandler());
     }
 }
