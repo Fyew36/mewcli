@@ -24,7 +24,7 @@ public class GuiCrackedLogin extends GuiScreen {
     @Override
     public void initGui() {
         Keyboard.enableRepeatEvents(true);
-        ScaledResolution sr = new ScaledResolution(mc);
+        sr = new ScaledResolution(mc);
 
         usernameField = new GuiTextField(1, mc.fontRendererObj, sr.getScaledWidth() / 2 - 100, sr.getScaledHeight() / 2, 200, 20);
         usernameField.setMaxStringLength(16);
