@@ -71,4 +71,8 @@ public class ModeProperty extends Property<Integer> {
         }
         this.setValue(prev);
     }
+
+    public String[] getModes() {
+        return this.modes;
+    }
 }
